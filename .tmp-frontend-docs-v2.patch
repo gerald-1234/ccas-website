@@ -1,0 +1,117 @@
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@
+-This repository contains the Node.js and Express backend for the CareConnect
+-Clinic Appointment System described in the Software Analysis and Design report.
++This repository contains the complete CareConnect Clinic Appointment System
++described in the Software Analysis and Design report. The frontend uses HTML,
++CSS, and vanilla JavaScript, while the backend uses Node.js and Express.
+@@
+ ## Main Features
+ 
++- Responsive role-based clinic dashboard
+ - Patient registration and profile management
+@@
+ ## Technology
+ 
++- HTML5
++- CSS3
++- Vanilla JavaScript with ES modules
+ - Node.js
+@@
+ ## Project Structure
+ 
+ ```text
++client/
++  index.html                  Login and patient registration
++  dashboard.html              Role-based clinic portal
++  assets/                     CSS, JavaScript modules, and visual assets
++  README.md                   Frontend setup and defence guide
+ database/
+@@
+ GET http://localhost:5000/api/health
+ ```
+ 
++### 5. Start the frontend
++
++Open another terminal:
++
++```powershell
++cd client
++python -m http.server 5500
++```
++
++Open:
++
++```text
++http://localhost:5500
++```
++
++The backend `CLIENT_URL` must contain `http://localhost:5500`.
++
+ ## Tests
+@@
+-## Render Deployment
++## Backend Deployment on Render
+@@
+ the same Supabase database.
+ 
++## Frontend Deployment
++
++Deploy the `client/` folder to a static host. The production API address is
++stored in:
++
++```text
++client/assets/js/config.js
++```
++
++Set the backend `CLIENT_URL` to the exact deployed frontend origin. If the
++Render backend address changes, update both `config.js` and the `connect-src`
++rule in `client/_headers`.
++
+ ## Authentication
+@@
+ ## Defence Notes
+ 
++- The frontend uses one dashboard and changes navigation according to user role.
++- All API calls pass through one reusable `apiRequest()` function.
++- The JWT is kept in `sessionStorage` and sent in the Authorization header.
++- Frontend role checks improve usability; Express middleware provides security.
+ - Passwords are hashed with bcrypt before storage.
+diff --git a/DEVELOPERS.md b/DEVELOPERS.md
+--- a/DEVELOPERS.md
++++ b/DEVELOPERS.md
+@@
+ This document is the contract between the frontend and the Express backend.
+ 
++## Implemented Frontend
++
++The vanilla JavaScript frontend is available in `client/`.
++
++```text
++client/
++  index.html
++  dashboard.html
++  assets/css/styles.css
++  assets/js/
++  assets/images/
++```
++
++The frontend API address is configured in:
++
++```text
++client/assets/js/config.js
++```
++
++Use a local web server because the JavaScript files use ES modules:
++
++```powershell
++cd client
++python -m http.server 5500
++```
++
++See `client/README.md` for the page structure, role navigation, deployment
++steps, and frontend defence notes.
++
+ ## Base URLs

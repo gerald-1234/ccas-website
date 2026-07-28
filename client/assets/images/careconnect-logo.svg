@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">CareConnect logo</title>
+  <desc id="description">A medical cross connected to four care points.</desc>
+  <rect width="64" height="64" rx="12" fill="#12665f"/>
+  <path d="M27 15h10v12h12v10H37v12H27V37H15V27h12V15Z" fill="#ffffff"/>
+  <circle cx="12" cy="12" r="4" fill="#f2a65a"/>
+  <circle cx="52" cy="12" r="4" fill="#56b4d3"/>
+  <circle cx="12" cy="52" r="4" fill="#56b4d3"/>
+  <circle cx="52" cy="52" r="4" fill="#f2a65a"/>
+  <path d="M15 15l8 8M49 15l-8 8M15 49l8-8M49 49l-8-8" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+</svg>
