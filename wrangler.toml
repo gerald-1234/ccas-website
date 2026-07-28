@@ -2,7 +2,7 @@ name = "ccas-website"
 compatibility_date = "2026-07-27"
 
 [assets]
-directory = "./client"
+directory = "./client(First)"
 # Match the clean, extensionless HTML URLs used throughout the portal.
 
 html_handling = "auto-trailing-slash"
