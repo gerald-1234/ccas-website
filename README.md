@@ -1,13 +1,15 @@
 # CareConnect Clinic Appointment System
 
-This repository contains the Node.js and Express backend for the CareConnect
-Clinic Appointment System described in the Software Analysis and Design report.
+This repository contains the complete CareConnect Clinic Appointment System
+described in the Software Analysis and Design report. The frontend uses HTML,
+CSS, and vanilla JavaScript, while the backend uses Node.js and Express.
 
 Controllers use direct Supabase queries, validation is kept in
 small helper functions, and every major module has a clear responsibility.
 
 ## Main Features
 
+- Responsive role-based clinic dashboard
 - Patient registration and profile management
 - Staff login with JWT authentication
 - Six roles: patient, receptionist, doctor, nurse, manager, and admin
@@ -25,6 +27,9 @@ management, or payroll because those items are outside the project scope.
 
 ## Technology
 
+- HTML5
+- CSS3
+- Vanilla JavaScript with ES modules
 - Node.js
 - Express.js
 - Supabase PostgreSQL
@@ -34,6 +39,11 @@ management, or payroll because those items are outside the project scope.
 ## Project Structure
 
 ```text
+client/
+  index.html                  Login and patient registration
+  dashboard.html              Role-based clinic portal
+  assets/                     CSS, JavaScript modules, and visual assets
+  README.md                   Frontend setup and defence guide
 database/
   schema.sql                 Supabase database tables
 server/
@@ -118,6 +128,23 @@ Health check:
 GET http://localhost:5000/api/health
 ```
 
+### 5. Start the frontend
+
+Open another terminal:
+
+```powershell
+cd client
+python -m http.server 5500
+```
+
+Open:
+
+```text
+http://localhost:5500
+```
+
+The backend `CLIENT_URL` must contain `http://localhost:5500`.
+
 ## Tests
 
 Run:
@@ -129,7 +156,7 @@ npm test
 The tests cover password/date helpers, appointment overlap detection, doctor
 schedule checks, and available-slot generation.
 
-## Render Deployment
+## Backend Deployment on Render
 
 The repository includes `render.yaml`.
 
@@ -145,6 +172,19 @@ API with `npm start`, and checks `/api/health`.
 Run `database/schema.sql` in Supabase before the first deployment. You can create
 the first administrator locally because the local script and the deployed API use
 the same Supabase database.
+
+## Frontend Deployment
+
+Deploy the `client/` folder to a static host. The production API address is
+stored in:
+
+```text
+client/assets/js/config.js
+```
+
+Set the backend `CLIENT_URL` to the exact deployed frontend origin. If the
+Render backend address changes, update both `config.js` and the `connect-src`
+rule in `client/_headers`.
 
 ## Authentication
 
@@ -170,6 +210,10 @@ See `DEVELOPERS.md` for the complete route list and frontend examples.
 
 ## Defence Notes
 
+- The frontend uses one dashboard and changes navigation according to user role.
+- All API calls pass through one reusable `apiRequest()` function.
+- The JWT is kept in `sessionStorage` and sent in the Authorization header.
+- Frontend role checks improve usability; Express middleware provides security.
 - Passwords are hashed with bcrypt before storage.
 - JWT middleware identifies the logged-in user.
 - Role middleware prevents users from opening routes outside their duties.

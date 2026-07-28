@@ -2,6 +2,35 @@
 
 This document is the contract between the frontend and the Express backend.
 
+## Implemented Frontend
+
+The vanilla JavaScript frontend is available in `client/`.
+
+```text
+client/
+  index.html
+  dashboard.html
+  assets/css/styles.css
+  assets/js/
+  assets/images/
+```
+
+The frontend API address is configured in:
+
+```text
+client/assets/js/config.js
+```
+
+Use a local web server because the JavaScript files use ES modules:
+
+```powershell
+cd client
+python -m http.server 5500
+```
+
+See `client/README.md` for the page structure, role navigation, deployment
+steps, and frontend defence notes.
+
 ## Base URLs
 
 Local development:

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CareConnect clinic portal">
+  <title>Dashboard | CareConnect</title>
+  <link rel="icon" href="assets/images/careconnect-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#page-content">Skip to page content</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="sidebar-header">
+        <a class="brand-lockup brand-lockup-light" href="#overview" aria-label="CareConnect overview">
+          <img src="assets/images/careconnect-logo.svg" alt="" width="42" height="42">
+          <div>
+            <strong>CareConnect</strong>
+            <span>Clinic System</span>
+          </div>
+        </a>
+        <button class="icon-button sidebar-close" type="button" title="Close menu" aria-label="Close menu" data-close-sidebar>
+          <svg class="icon"><use href="assets/images/icons.svg#icon-x"></use></svg>
+        </button>
+      </div>
+
+      <div class="clinic-label">
+        <span class="clinic-label-mark">CC</span>
+        <div>
+          <strong>CareConnect Clinic</strong>
+          <span>Operations portal</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <span class="avatar avatar-light" data-user-initials>CC</span>
+          <div>
+            <strong data-user-name>Loading...</strong>
+            <span data-user-role>Account</span>
+          </div>
+        </div>
+        <button class="icon-button icon-button-light" type="button" title="Sign out" aria-label="Sign out" data-sign-out>
+          <svg class="icon"><use href="assets/images/icons.svg#icon-log-out"></use></svg>
+        </button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" data-close-sidebar></div>
+
+    <div class="app-main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button menu-button" type="button" title="Open menu" aria-label="Open menu" data-open-sidebar>
+            <svg class="icon"><use href="assets/images/icons.svg#icon-menu"></use></svg>
+          </button>
+          <div class="page-heading">
+            <h1 id="page-title">Overview</h1>
+            <p id="page-subtitle">Your clinic activity at a glance.</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <span class="today-label" data-today-label></span>
+          <button class="icon-button notification-button" type="button" title="Notifications" aria-label="Open notifications" data-go-page="notifications">
+            <svg class="icon"><use href="assets/images/icons.svg#icon-bell"></use></svg>
+            <span class="notification-badge" data-notification-count hidden>0</span>
+          </button>
+          <button class="profile-button" type="button" data-go-page="account">
+            <span class="avatar" data-user-initials>CC</span>
+            <span class="profile-button-copy">
+              <strong data-user-name>Loading...</strong>
+              <span data-user-role>Account</span>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <main class="page-content" id="page-content" tabindex="-1">
+        <div class="page-loading">
+          <span class="large-spinner" aria-hidden="true"></span>
+          <p>Loading your clinic workspace...</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="modal" id="app-modal">
+    <form class="modal-panel" id="modal-form">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow" id="modal-eyebrow">CareConnect</p>
+          <h2 id="modal-title">Form</h2>
+        </div>
+        <button class="icon-button" type="button" title="Close" aria-label="Close" data-close-modal>
+          <svg class="icon"><use href="assets/images/icons.svg#icon-x"></use></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions" id="modal-actions">
+        <button class="button button-secondary" type="button" data-close-modal>Cancel</button>
+        <button class="button button-primary" type="submit" id="modal-submit">
+          <span>Save</span>
+          <span class="button-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="assets/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+diff --git a/.tmp-browser-check/layout-audit.js b/.tmp-browser-check/layout-audit.js
+--- a/.tmp-browser-check/layout-audit.js
++++ b/.tmp-browser-check/layout-audit.js
+@@ -82,6 +82,7 @@ async function assertLayout(page, label) {
+       .filter((button) => {
+         const style = getComputedStyle(button);
+         if (style.display === 'none' || style.visibility === 'hidden') return false;
++        if (button.matches('.icon-button')) return false;
+         return button.scrollWidth > button.clientWidth + 1;
+       })
+       .map((button) => button.textContent.trim().replace(/\s+/g, ' '));

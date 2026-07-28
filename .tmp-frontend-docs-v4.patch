@@ -1,0 +1,21 @@
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -116,4 +116,16 @@ Run `database/schema.sql` in Supabase before the first deployment. You can create
+ the first administrator locally because the local script and the deployed API use
+ the same Supabase database.
+ 
++## Frontend Deployment
++
++Deploy the `client/` folder to a static host. The production API address is
++stored in:
++
++```text
++client/assets/js/config.js
++```
++
++Set the backend `CLIENT_URL` to the exact deployed frontend origin. If the
++Render backend address changes, update both `config.js` and the `connect-src`
++rule in `client/_headers`.
++
+ ## Authentication
