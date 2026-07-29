@@ -1,85 +1,120 @@
-import { useState } from "react";
-import { AuthProvider } from "./AuthContext";
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
+
+// Auth Provider (located directly in src/)
+import { AuthProvider, useAuth } from "./AuthContext";
+
+// Components
 import { Authentication } from "./components/auth/Authentication";
+import { Dashboard } from "./components/dashboards/Dashboard";
 import { LandingPage } from "./components/landing/LandingPage";
-import { Sidebar } from "./components/layout/Sidebar";
-import { useAuth } from "./useAuth";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
 
-// Dashboards
-import { DoctorDashboard } from "./components/dashboards/DoctorDashboard";
-import { ManagerDashboard } from "./components/dashboards/ManagerDashboard";
-import { ReceptionDashboard } from "./components/dashboards/ReceptionDashboard";
-
-// Forms & Pages
-import { AppointmentBooking } from "./components/forms/AppointmentBooking";
-import { PatientRegistration } from "./components/forms/PatientRegistration";
-import { PatientDirectory } from "./components/patients/PatientDirectory";
-
-const MainLayout = () => {
+// Protected Route Wrapper (Restricted to logged-in users)
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  const [showAuth, setShowAuth] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">
-        Loading CareConnect Workspace...
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-500 font-medium text-sm animate-pulse">
+          Authenticating session...
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    if (showAuth) {
-      return <Authentication onCancelLanding={() => setShowAuth(false)} />;
-    }
-    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+    return <Navigate to="/auth" replace />;
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "registration":
-        return (
-          <PatientRegistration onSuccess={() => setActiveTab("dashboard")} />
-        );
-      case "booking":
-        return (
-          <AppointmentBooking onSuccess={() => setActiveTab("dashboard")} />
-        );
-      case "patients":
-        return <PatientDirectory />;
-      case "dashboard":
-      default:
-        switch (user.role) {
-          case "receptionist":
-            return <ReceptionDashboard />;
-          case "doctor":
-            return <DoctorDashboard />;
-          case "manager":
-            return <ManagerDashboard />;
-          case "patient":
-            return <AppointmentBooking />;
-          default:
-            return (
-              <div className="p-6 bg-white rounded-xl">
-                Welcome to CareConnect Workspace.
-              </div>
-            );
-        }
-    }
-  };
+  return children;
+};
 
-  return (
-    <div className="flex min-h-screen bg-slate-100 font-sans">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 p-10 overflow-y-auto">{renderContent()}</main>
-    </div>
-  );
+// Public Route Wrapper (Redirects logged-in users away from auth to dashboard)
+const PublicAuthRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-500 font-medium text-sm animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
+// Redirects logged-in users from the root path to their dashboard.
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null; // Or a loading spinner
+  return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 };
 
 export default function App() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <Router>
+        <Routes>
+          {/* Public Landing Page (redirects if logged in) */}
+          <Route path="/" element={<RootRedirect />} />
+
+          {/* Authentication Route (src/components/auth/Authentication.jsx) */}
+          <Route
+            path="/auth"
+            element={
+              <PublicAuthRoute>
+                <Authentication />
+              </PublicAuthRoute>
+            }
+          />
+
+          {/* Protected Dashboard Route */}
+          <Route
+            path="/dashboard/*"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback 404 Route */}
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-slate-50">
+                <h1 className="text-5xl font-extrabold text-slate-900 mb-2">
+                  404
+                </h1>
+                <p className="text-slate-500 mb-6 text-sm">
+                  The page you are looking for does not exist.
+                </p>
+                <a
+                  href="/"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition"
+                >
+                  Return Home
+                </a>
+              </div>
+            }
+          />
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }
