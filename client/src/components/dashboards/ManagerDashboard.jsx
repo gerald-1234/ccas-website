@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function ManagerDashboard({ patients }) {
   const totalPatients = patients.length;
   const waitingCount = patients.filter((p) => p.status === "Waiting").length;
