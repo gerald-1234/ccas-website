@@ -1,238 +1,212 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { apiRequest } from "../../config/api";
+import { useAuth } from "../../useAuth";
 
-// Static dummy data for doctors and time slots
-const DOCTORS = [
-  {
-    id: "d1",
-    name: "Dr. Sarah Jenkins",
-    specialty: "General Practitioner",
-    availableDays: ["Mon", "Wed", "Fri"],
-  },
-  {
-    id: "d2",
-    name: "Dr. Marcus Vance",
-    specialty: "Cardiology",
-    availableDays: ["Tue", "Thu"],
-  },
-  {
-    id: "d3",
-    name: "Dr. Elena Rostova",
-    specialty: "Pediatrics",
-    availableDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-  },
-];
+export const AppointmentBooking = ({ onSuccess }) => {
+  const { user } = useAuth();
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [date, setDate] = useState("");
+  const [slots, setSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [reason, setReason] = useState("");
 
-const TIME_SLOTS = [
-  "09:00 AM",
-  "10:00 AM",
-  "11:30 AM",
-  "01:30 PM",
-  "02:45 PM",
-  "04:00 PM",
-];
+  // Patient ID for Receptionist/Admin overrides
+  const [patientId, setPatientId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-export default function AppointmentBooking() {
-  const [formData, setFormData] = useState({
-    patientName: "",
-    patientPhone: "",
-    doctorId: "",
-    appointmentDate: "",
-    appointmentTime: "",
-    reason: "",
-  });
+  const isStaff = user?.role === "receptionist" || user?.role === "admin";
 
-  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    async function loadDoctors() {
+      try {
+        const res = await apiRequest("/doctors");
+        setDoctors(res.doctors || res || []);
+      } catch (err) {
+        setError("Failed to fetch doctor list");
+      }
+    }
+    loadDoctors();
+  }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    if (!selectedDoctor || !date) {
+      setSlots([]);
+      return;
+    }
 
-  const handleSlotSelect = (slot) => {
-    setFormData((prev) => ({ ...prev, appointmentTime: slot }));
-  };
+    async function loadSlots() {
+      try {
+        const res = await apiRequest(
+          `/doctors/${selectedDoctor}/slots?date=${date}`,
+        );
+        setSlots(res.slots || []);
+      } catch (err) {
+        setError("Failed to fetch available slots");
+      }
+    }
+    loadSlots();
+  }, [selectedDoctor, date]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Static submit behavior for now
-    console.log("Static Booking Data:", formData);
-    setSubmitted(true);
-  };
+    if (!selectedSlot) {
+      setError("Please select an available time slot.");
+      return;
+    }
 
-  const handleReset = () => {
-    setFormData({
-      patientName: "",
-      patientPhone: "",
-      doctorId: "",
-      appointmentDate: "",
-      appointmentTime: "",
-      reason: "",
-    });
-    setSubmitted(false);
-  };
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
-  const selectedDoctor = DOCTORS.find((d) => d.id === formData.doctorId);
+    const payload = {
+      doctor_id: selectedDoctor,
+      appointment_date: date,
+      appointment_time: selectedSlot.appointment_time,
+      duration_minutes: selectedSlot.duration_minutes || 30,
+      reason_for_visit: reason,
+      ...(isStaff && patientId ? { patient_id: patientId } : {}),
+    };
+
+    try {
+      await apiRequest("/appointments", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setSuccess("Appointment successfully scheduled.");
+      setSelectedSlot(null);
+      setReason("");
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-slate-900 shadow-md rounded-xl border border-slate-200 dark:border-slate-800">
-      <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-        Book an Appointment
+    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+      <h2 className="text-xl font-bold text-slate-900 mb-6">
+        Schedule Consultation
       </h2>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-        Fill in the details below to schedule a consultation.
-      </p>
 
-      {submitted ? (
-        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6 text-center space-y-4">
-          <div className="text-emerald-600 dark:text-emerald-400 font-semibold text-lg">
-            Appointment Booked (Static Preview)
-          </div>
-          <div className="text-sm text-slate-600 dark:text-slate-300 space-y-1 text-left bg-white dark:bg-slate-800 p-4 rounded border border-slate-200 dark:border-slate-700">
-            <p>
-              <strong>Patient:</strong> {formData.patientName}
-            </p>
-            <p>
-              <strong>Doctor:</strong> {selectedDoctor?.name || "N/A"}
-            </p>
-            <p>
-              <strong>Date & Time:</strong> {formData.appointmentDate} at{" "}
-              {formData.appointmentTime}
-            </p>
-            <p>
-              <strong>Reason:</strong> {formData.reason || "None specified"}
-            </p>
-          </div>
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 text-sm bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-lg hover:opacity-90 font-medium"
-          >
-            Book Another Appointment
-          </button>
+      {error && (
+        <div className="p-4 mb-4 text-sm bg-red-50 text-red-700 rounded-lg">
+          {error}
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Patient Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Patient Name
-              </label>
-              <input
-                type="text"
-                name="patientName"
-                value={formData.patientName}
-                onChange={handleChange}
-                required
-                placeholder="e.g. John Doe"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+      )}
+      {success && (
+        <div className="p-4 mb-4 text-sm bg-green-50 text-green-700 rounded-lg">
+          {success}
+        </div>
+      )}
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                name="patientPhone"
-                value={formData.patientPhone}
-                onChange={handleChange}
-                required
-                placeholder="+1 (555) 000-0000"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          {/* Doctor Selection */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {isStaff && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Select Doctor
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Patient UUID
+            </label>
+            <input
+              type="text"
+              required
+              value={patientId}
+              onChange={(e) => setPatientId(e.target.value)}
+              placeholder="e.g. 123e4567-e89b-12d3-a456-426614174000"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Doctor
             </label>
             <select
-              name="doctorId"
-              value={formData.doctorId}
-              onChange={handleChange}
+              value={selectedDoctor}
+              onChange={(e) => setSelectedDoctor(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
-              <option value="" className="dark:bg-slate-900">
-                -- Choose a Doctor --
-              </option>
-              {DOCTORS.map((doc) => (
-                <option
-                  key={doc.id}
-                  value={doc.id}
-                  className="dark:bg-slate-900"
-                >
-                  {doc.name} ({doc.specialty})
+              <option value="">Select Doctor</option>
+              {doctors.map((doc) => (
+                <option key={doc.id} value={doc.id}>
+                  Dr. {doc.first_name} {doc.last_name} (
+                  {doc.specialization || "General"})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Date Picker */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Appointment Date
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Date
             </label>
             <input
               type="date"
-              name="appointmentDate"
-              value={formData.appointmentDate}
-              onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
+        </div>
 
-          {/* Time Slot Picker */}
+        {date && selectedDoctor && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Select Time Slot
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
+              Available Slots
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map((slot) => (
-                <button
-                  type="button"
-                  key={slot}
-                  onClick={() => handleSlotSelect(slot)}
-                  className={`py-2 text-sm rounded-md border text-center transition-colors ${
-                    formData.appointmentTime === slot
-                      ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-500"
-                  }`}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
+            {slots.length === 0 ? (
+              <p className="text-sm text-slate-500 italic">
+                No slots available for this date.
+              </p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {slots.map((s) => (
+                  <button
+                    key={s.appointment_time}
+                    type="button"
+                    onClick={() => setSelectedSlot(s)}
+                    className={`py-2 px-3 text-xs font-semibold rounded-lg border transition ${
+                      selectedSlot?.appointment_time === s.appointment_time
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {s.appointment_time}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Reason for Visit */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Reason for Visit
-            </label>
-            <textarea
-              name="reason"
-              rows={3}
-              value={formData.reason}
-              onChange={handleChange}
-              placeholder="Brief description of symptoms or consultation..."
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Reason for Visit
+          </label>
+          <textarea
+            required
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            placeholder="Describe symptoms or primary consultation reason..."
+          />
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-          >
-            Confirm Appointment
-          </button>
-        </form>
-      )}
+        <button
+          type="submit"
+          disabled={loading || !selectedSlot}
+          className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+        >
+          {loading ? "Booking..." : "Confirm Appointment"}
+        </button>
+      </form>
     </div>
   );
-}
+};
