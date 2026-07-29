@@ -1,3 +1,4 @@
+import React from "react";
 import { BrandLockup } from "../common/BrandLockup";
 
 export const AuthBrandPanel = () => {
