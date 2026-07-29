@@ -1,77 +1,137 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { apiRequest } from "./config/api";
 
 export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const mountedRef = useRef(true);
+  const fetchingRef = useRef(false);
+
+  const clearAuth = useCallback(() => {
+    sessionStorage.removeItem("careconnect_token");
+
+    if (!mountedRef.current) return;
+
+    setUser(null);
+    setProfile(null);
+  }, []);
+
   const fetchUser = useCallback(async () => {
+    if (fetchingRef.current) return;
+
     const token = sessionStorage.getItem("careconnect_token");
+
     if (!token) {
-      setUser(null);
-      setProfile(null);
-      setLoading(false);
+      clearAuth();
+
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+
       return;
     }
 
+    fetchingRef.current = true;
+
     try {
       const data = await apiRequest("/auth/me");
-      setUser(data.user);
-      setProfile(data.profile || null);
-    } catch (err) {
-      console.error("Session restoration failed:", err.message);
-      sessionStorage.removeItem("careconnect_token");
-      setUser(null);
-      setProfile(null);
+
+      if (!mountedRef.current) return;
+
+      setUser(data.user ?? null);
+      setProfile(data.profile ?? null);
+    } catch (error) {
+      console.error("Failed to restore session:", error);
+
+      clearAuth();
     } finally {
-      setLoading(false);
+      fetchingRef.current = false;
+
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [clearAuth]);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     fetchUser();
 
     const handleUnauthorized = () => {
-      setUser(null);
-      setProfile(null);
+      clearAuth();
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
-    return () =>
+
+    return () => {
+      mountedRef.current = false;
+
       window.removeEventListener("auth:unauthorized", handleUnauthorized);
-  }, [fetchUser]);
+    };
+  }, [fetchUser, clearAuth]);
 
-  const login = async (email, password) => {
-    const data = await apiRequest("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    sessionStorage.setItem("careconnect_token", data.token);
-    setUser(data.user);
-    await fetchUser();
-    return data;
-  };
+  const login = useCallback(
+    async (email, password) => {
+      const data = await apiRequest("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-  const logout = async () => {
-    try {
-      await apiRequest("/auth/logout", { method: "POST" });
-    } catch (e) {
-      // Ignore network errors on logout
-    } finally {
-      sessionStorage.removeItem("careconnect_token");
-      setUser(null);
-      setProfile(null);
-    }
-  };
+      sessionStorage.setItem("careconnect_token", data.token);
 
-  return (
-    <AuthContext.Provider
-      value={{ user, profile, loading, login, logout, refreshUser: fetchUser }}
-    >
-      {children}
-    </AuthContext.Provider>
+      // Immediate UI update
+      setUser(data.user ?? null);
+
+      // Only fetch profile if needed
+      if (data.profile) {
+        setProfile(data.profile);
+      } else {
+        await fetchUser();
+      }
+
+      return data;
+    },
+    [fetchUser],
   );
-};
+
+  const logout = useCallback(async () => {
+    try {
+      await apiRequest("/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.warn("Logout request failed:", error);
+    } finally {
+      clearAuth();
+    }
+  }, [clearAuth]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      profile,
+      loading,
+      login,
+      logout,
+      refreshUser: fetchUser,
+    }),
+    [user, profile, loading, login, logout, fetchUser],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
