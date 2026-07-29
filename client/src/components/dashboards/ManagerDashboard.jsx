@@ -1,177 +1,128 @@
-import { useState } from "react";
+import React from "react";
 
-// Static mock data for Manager Dashboard
-const METRICS = {
-  totalRevenueToday: "$4,280",
-  occupancyRate: "82%",
-  activeDoctors: 14,
-  totalPatientsServed: 48,
-};
+export default function ManagerDashboard({ patients }) {
+  const totalPatients = patients.length;
+  const waitingCount = patients.filter((p) => p.status === "Waiting").length;
+  const completedCount = patients.filter(
+    (p) => p.status === "Completed",
+  ).length;
+  const inConsultationCount = patients.filter(
+    (p) => p.status === "In Consultation",
+  ).length;
 
-const DEPARTMENT_WORKLOAD = [
-  { department: "General Medicine", patients: 18, capacity: "85%" },
-  { department: "Cardiology", patients: 8, capacity: "60%" },
-  { department: "Pediatrics", patients: 14, capacity: "90%" },
-  { department: "Orthopedics", patients: 8, capacity: "50%" },
-];
-
-const STAFF_STATUS = [
-  {
-    id: "s1",
-    name: "Dr. Sarah Jenkins",
-    role: "General Practitioner",
-    status: "On Duty",
-    room: "Consultation 1",
-  },
-  {
-    id: "s2",
-    name: "Dr. Marcus Vance",
-    role: "Cardiologist",
-    status: "In Surgery",
-    room: "OR 2",
-  },
-  {
-    id: "s3",
-    name: "Dr. Elena Rostova",
-    role: "Pediatrician",
-    status: "On Duty",
-    room: "Consultation 3",
-  },
-  {
-    id: "s4",
-    name: "Nurse Clara Oswald",
-    role: "Head Nurse",
-    status: "On Break",
-    room: "Staff Lounge",
-  },
-];
-
-export default function ManagerDashboard() {
-  const [staff, setStaff] = useState(STAFF_STATUS);
-
-  const toggleStaffStatus = (id) => {
-    setStaff((prev) =>
-      prev.map((member) => {
-        if (member.id === id) {
-          const nextStatus =
-            member.status === "On Duty" ? "On Break" : "On Duty";
-          return { ...member, status: nextStatus };
-        }
-        return member;
-      }),
-    );
-  };
+  const estimatedRevenue = completedCount * 150 + inConsultationCount * 100;
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          Management & Operations Dashboard
+      <div className="border-b border-slate-800 pb-4">
+        <h1 className="text-2xl font-bold text-slate-100">
+          Practice & Operational Analytics
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          High-level overview of facility performance, department load, and
-          staff availability.
+        <p className="text-xs text-slate-400">
+          High-level insights into patient throughput, clinic capacity, and
+          revenue.
         </p>
       </div>
 
-      {/* Analytics Overview Cards */}
+      {/* Operational Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Today's Revenue
+        <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 block">
+            Total Registrations
+          </span>
+          <p className="text-2xl font-bold text-slate-100 mt-1">
+            {totalPatients}
           </p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-            {METRICS.totalRevenueToday}
-          </p>
+          <span className="text-[10px] text-teal-400 mt-1 block">
+            Active today
+          </span>
         </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Bed Occupancy
+        <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 block">
+            Waiting Room Queue
+          </span>
+          <p className="text-2xl font-bold text-amber-400 mt-1">
+            {waitingCount}
           </p>
-          <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-            {METRICS.occupancyRate}
-          </p>
+          <span className="text-[10px] text-slate-400 mt-1 block">
+            Avg wait time: ~14 mins
+          </span>
         </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Active Doctors
+        <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 block">
+            Completed Consultations
+          </span>
+          <p className="text-2xl font-bold text-teal-400 mt-1">
+            {completedCount}
           </p>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1">
-            {METRICS.activeDoctors}
-          </p>
+          <span className="text-[10px] text-slate-400 mt-1 block">
+            Discharged today
+          </span>
         </div>
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Total Visits Today
+        <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 block">
+            Est. Consultation Revenue
+          </span>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">
+            ${estimatedRevenue}
           </p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-            {METRICS.totalPatientsServed}
-          </p>
+          <span className="text-[10px] text-slate-400 mt-1 block">
+            Based on $150 standard fee
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department Capacity Breakdown */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
-            Department Capacity & Workload
-          </h2>
-          <div className="space-y-3">
-            {DEPARTMENT_WORKLOAD.map((dept) => (
-              <div key={dept.department} className="space-y-1">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-700 dark:text-slate-300">
-                    {dept.department}
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {dept.patients} Patients ({dept.capacity})
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-indigo-600 h-full rounded-full"
-                    style={{ width: dept.capacity }}
-                  />
-                </div>
-              </div>
-            ))}
+      {/* Staff Roster Grid */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+          Staff Duty Roster & Workload
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-slate-200">
+                Dr. Sarah Jenkins
+              </span>
+              <span className="text-[10px] bg-teal-500/10 text-teal-400 px-2 py-0.5 rounded-full border border-teal-500/20">
+                On Duty
+              </span>
+            </div>
+            <p className="text-slate-500">General Medicine • Morning Shift</p>
+            <p className="text-slate-400 text-[11px]">
+              Active Queue:{" "}
+              <span className="text-teal-400 font-semibold">
+                {waitingCount + inConsultationCount} patients
+              </span>
+            </p>
           </div>
-        </div>
 
-        {/* Staff Availability Roster */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
-            Staff Roster Status
-          </h2>
-          <div className="divide-y divide-slate-200 dark:divide-slate-800">
-            {staff.map((member) => (
-              <div
-                key={member.id}
-                className="py-2.5 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-semibold text-sm text-slate-800 dark:text-slate-100">
-                    {member.name}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {member.role} • {member.room}
-                  </p>
-                </div>
-                <button
-                  onClick={() => toggleStaffStatus(member.id)}
-                  className={`px-2.5 py-1 text-xs rounded-full font-medium border transition-colors ${
-                    member.status === "On Duty"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800"
-                      : member.status === "In Surgery"
-                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
-                        : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
-                  }`}
-                >
-                  {member.status}
-                </button>
-              </div>
-            ))}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-slate-200">Dr. Robert Chen</span>
+              <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">
+                In Surgery
+              </span>
+            </div>
+            <p className="text-slate-500">Cardiology • Morning Shift</p>
+            <p className="text-slate-400 text-[11px]">
+              Active Queue:{" "}
+              <span className="text-teal-400 font-semibold">1 patient</span>
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-slate-200">Dr. Amara Okafor</span>
+              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+                Off Duty
+              </span>
+            </div>
+            <p className="text-slate-500">Pediatrics • Evening Shift</p>
+            <p className="text-slate-400 text-[11px]">
+              Starts at:{" "}
+              <span className="text-slate-300 font-semibold">02:00 PM</span>
+            </p>
           </div>
         </div>
       </div>
