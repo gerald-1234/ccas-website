@@ -1,34 +1,22 @@
-// src/components/auth/AuthBrandPanel.jsx
-import BrandLockup from "../common/BrandLockup";
+import React from "react";
+import { BrandLockup } from "../common/BrandLockup";
 
-export default function AuthBrandPanel() {
+export const AuthBrandPanel = () => {
   return (
-    <section className="flex flex-col justify-between p-8 bg-slate-900 rounded-2xl border border-slate-800">
-      <BrandLockup subtitle="Clinic Appointment System" size={48} />
-
-      <div className="my-8">
-        <p className="text-xs uppercase tracking-wider text-teal-400 font-semibold mb-2">
-          Connected clinic care
-        </p>
-        <h1 className="text-2xl font-bold text-white mb-3 leading-snug">
-          Appointments, records, and clinic teams in one place.
-        </h1>
-        <p className="text-slate-400 text-sm">
-          Secure access for patients, doctors, nurses, receptionists, managers,
-          and administrators.
+    <div className="hidden lg:flex flex-col justify-between w-1/2 bg-blue-600 p-12 text-white">
+      <BrandLockup size="lg" light />
+      <div className="space-y-6 max-w-lg">
+        <h2 className="text-4xl font-extrabold leading-tight">
+          Streamlined healthcare scheduling for modern practices.
+        </h2>
+        <p className="text-blue-100 text-lg leading-relaxed">
+          Access complete medical records instantly, schedule consultations
+          without overlaps, and maintain seamless clinic operations.
         </p>
       </div>
-
-      {/* Main pattern asset */}
-      <img
-        className="w-full max-w-xs mx-auto my-4 opacity-90"
-        src="/assets/images/care-pattern.svg"
-        alt="Care network pattern showing connected clinic services"
-      />
-
-      <p className="text-xs text-slate-500 text-center">
-        CareConnect Clinic &copy; {new Date().getFullYear()}
-      </p>
-    </section>
+      <div className="text-xs text-blue-200">
+        © 2026 CareConnect Clinic. All rights reserved.
+      </div>
+    </div>
   );
-}
+};

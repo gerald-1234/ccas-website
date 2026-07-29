@@ -1,272 +1,349 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useAuth } from "../../useAuth";
+import { AuthBrandPanel } from "./AuthBrandPanel";
+import { BrandLockup } from "../common/BrandLockup";
+import { apiRequest } from "../../config/api";
+import { BLOOD_GROUPS } from "../../config/constants";
 
-// Mock database of users with pre-assigned roles
-const MOCK_USERS_DB = [
-  {
-    email: 'doctor@careconnect.com',
-    password: 'password123',
-    name: 'Dr. Sarah Jenkins',
-    role: 'doctor',
-  },
-  {
-    email: 'reception@careconnect.com',
-    password: 'password123',
-    name: 'Alex Rivera',
-    role: 'receptionist',
-  },
-  {
-    email: 'manager@careconnect.com',
-    password: 'password123',
-    name: 'Eleanor Vance',
-    role: 'manager',
-  },
-];
+export const Authentication = ({ onCancelLanding }) => {
+  const { login } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-export default function Authentication({ onAuthSuccess }) {
-  const [isLogin, setIsLogin] = useState(true);
+  // Login Form
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
 
-  // Sign In state (Only email & password required)
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-
-  // Sign Up state
-  const [signupData, setSignupData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'doctor',
+  // Registration Form
+  const [regData, setRegData] = useState({
+    first_name: "",
+    last_name: "",
+    gender: "Male",
+    date_of_birth: "",
+    phone: "",
+    email: "",
+    password: "",
+    residential_address: "",
+    blood_group: "O+",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
   });
 
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Handle Login Submit
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    // Check mock database for matching email and password
-    const foundUser = MOCK_USERS_DB.find(
-      (u) =>
-        u.email.toLowerCase() === loginData.email.toLowerCase() &&
-        u.password === loginData.password
-    );
-
-    if (foundUser) {
-      setSuccessMsg(`Authenticated successfully. Redirecting as ${foundUser.role}...`);
-      setTimeout(() => {
-        if (onAuthSuccess) onAuthSuccess(foundUser);
-      }, 500);
-    } else {
-      setError('Invalid email or password. Use one of the mock credentials below.');
+    setError("");
+    setLoading(true);
+    try {
+      await login(loginEmail, loginPassword);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle Signup Submit
-  const handleSignupSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (signupData.password !== signupData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await apiRequest("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(regData),
+      });
+      sessionStorage.setItem("careconnect_token", res.token);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const newUser = {
-      email: signupData.email,
-      password: signupData.password,
-      name: signupData.fullName,
-      role: signupData.role,
-    };
-
-    // Add to mock DB in memory
-    MOCK_USERS_DB.push(newUser);
-
-    setSuccessMsg('Account created successfully! Switching to sign in...');
-    setTimeout(() => {
-      setIsLogin(true);
-      setLoginData({ email: signupData.email, password: signupData.password });
-      setSuccessMsg('Account created. Click Sign In to proceed.');
-    }, 1000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-12 font-sans">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 backdrop-blur-xl">
-
-        {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 font-bold text-2xl mb-3">
-            ┼
-          </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">CareConnect</h1>
-          <p className="text-xs text-slate-400 mt-1">Clinical Workspace Portal</p>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="grid grid-cols-2 bg-slate-800/60 p-1 rounded-xl mb-6 border border-slate-800">
-          <button
-            type="button"
-            onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all ${
-              isLogin ? 'bg-teal-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all ${
-              !isLogin ? 'bg-teal-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {/* Feedback Messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl">
-            {error}
-          </div>
-        )}
-        {successMsg && (
-          <div className="mb-4 p-3 bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs rounded-xl">
-            {successMsg}
-          </div>
-        )}
-
-        {/* SIGN IN FORM */}
-        {isLogin ? (
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="doctor@careconnect.com"
-                value={loginData.email}
-                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-2 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-teal-500/10"
-            >
-              Sign In
-            </button>
-
-            {/* Helper box listing test accounts */}
-            <div className="mt-6 pt-4 border-t border-slate-800/80">
-              <p className="text-[11px] font-semibold text-slate-400 mb-2">Available Demo Credentials:</p>
-              <div className="space-y-1.5">
-                {MOCK_USERS_DB.map((u) => (
-                  <button
-                    key={u.email}
-                    type="button"
-                    onClick={() => setLoginData({ email: u.email, password: u.password })}
-                    className="w-full flex items-center justify-between text-left px-2.5 py-1.5 rounded-lg bg-slate-800/40 hover:bg-slate-800 text-[11px] transition-colors border border-slate-800"
-                  >
-                    <span className="text-slate-300 truncate">{u.email}</span>
-                    <span className="text-teal-400 capitalize font-mono text-[10px] ml-2 shrink-0">{u.role}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </form>
-        ) : (
-          /* SIGN UP FORM */
-          <form onSubmit={handleSignupSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Full Name</label>
-              <input
-                type="text"
-                required
-                placeholder="Dr. Sarah Jenkins"
-                value={signupData.fullName}
-                onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Email Address</label>
-              <input
-                type="email"
-                required
-                placeholder="user@careconnect.com"
-                value={signupData.email}
-                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Role / Account Type</label>
-              <select
-                value={signupData.role}
-                onChange={(e) => setSignupData({ ...signupData, role: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700/80 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+    <div className="min-h-screen flex bg-slate-50">
+      <AuthBrandPanel />
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 py-12 overflow-y-auto">
+        <div className="max-w-md w-full mx-auto space-y-8">
+          <div className="flex justify-between items-center">
+            <BrandLockup />
+            {onCancelLanding && (
+              <button
+                onClick={onCancelLanding}
+                className="text-sm font-semibold text-blue-600 hover:underline"
               >
-                <option value="doctor">Doctor</option>
-                <option value="receptionist">Receptionist</option>
-                <option value="manager">Manager</option>
-              </select>
-            </div>
+                Back to Home
+              </button>
+            )}
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900">
+              {isRegistering
+                ? "Create Patient Account"
+                : "Sign in to CareConnect"}
+            </h2>
+            <p className="text-slate-500 text-sm mt-2">
+              {isRegistering
+                ? "Fill in your details to register as a new patient"
+                : "Enter your credentials to access your dashboard"}
+            </p>
+          </div>
+
+          {error && (
+            <div className="p-4 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {!isRegistering ? (
+            <form onSubmit={handleLoginSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Email Address
+                </label>
                 <input
-                  type="password"
+                  type="email"
                   required
-                  placeholder="••••••••"
-                  value={signupData.password}
-                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  placeholder="name@example.com"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">Confirm</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Password
+                </label>
                 <input
                   type="password"
                   required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   placeholder="••••••••"
-                  value={signupData.confirmPassword}
-                  onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-800/50 border border-slate-700/80 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                 />
               </div>
-            </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+              >
+                {loading ? "Authenticating..." : "Sign In"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regData.first_name}
+                    onChange={(e) =>
+                      setRegData({ ...regData, first_name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regData.last_name}
+                    onChange={(e) =>
+                      setRegData({ ...regData, last_name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Gender
+                  </label>
+                  <select
+                    value={regData.gender}
+                    onChange={(e) =>
+                      setRegData({ ...regData, gender: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={regData.date_of_birth}
+                    onChange={(e) =>
+                      setRegData({ ...regData, date_of_birth: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={regData.phone}
+                    onChange={(e) =>
+                      setRegData({ ...regData, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Blood Group
+                  </label>
+                  <select
+                    value={regData.blood_group}
+                    onChange={(e) =>
+                      setRegData({ ...regData, blood_group: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  >
+                    {BLOOD_GROUPS.map((bg) => (
+                      <option key={bg} value={bg}>
+                        {bg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={regData.email}
+                  onChange={(e) =>
+                    setRegData({ ...regData, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={regData.password}
+                  onChange={(e) =>
+                    setRegData({ ...regData, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={regData.residential_address}
+                  onChange={(e) =>
+                    setRegData({
+                      ...regData,
+                      residential_address: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Emergency Contact
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regData.emergency_contact_name}
+                    onChange={(e) =>
+                      setRegData({
+                        ...regData,
+                        emergency_contact_name: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Emergency Phone
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={regData.emergency_contact_phone}
+                    onChange={(e) =>
+                      setRegData({
+                        ...regData,
+                        emergency_contact_phone: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50 mt-2"
+              >
+                {loading ? "Creating Account..." : "Register Patient"}
+              </button>
+            </form>
+          )}
+
+          <div className="text-center pt-2">
             <button
-              type="submit"
-              className="w-full mt-2 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-teal-500/10"
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError("");
+              }}
+              className="text-sm text-blue-600 hover:underline font-medium"
             >
-              Create Account
+              {isRegistering
+                ? "Already have an account? Sign in"
+                : "Don't have an account? Register as Patient"}
             </button>
-          </form>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};

@@ -1,265 +1,235 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { apiRequest } from "../../config/api";
+import { BLOOD_GROUPS } from "../../config/constants";
 
-// Static choices for options
-const GENDER_OPTIONS = ["Male", "Female", "Other"];
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
-
-export default function PatientRegistration() {
+export const PatientRegistration = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    dob: "",
+    first_name: "",
+    last_name: "",
     gender: "Male",
-    bloodGroup: "O+",
-    address: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    knownAllergies: "",
+    date_of_birth: "",
+    phone: "",
+    email: "",
+    residential_address: "",
+    blood_group: "O+",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Static Patient Registration Data:", formData);
-    setSubmitted(true);
-  };
+    setLoading(true);
+    setMessage({ type: "", text: "" });
 
-  const handleReset = () => {
-    setFormData({
-      fullName: "",
-      email: "",
-      phone: "",
-      dob: "",
-      gender: "Male",
-      bloodGroup: "O+",
-      address: "",
-      emergencyContactName: "",
-      emergencyContactPhone: "",
-      knownAllergies: "",
-    });
-    setSubmitted(false);
+    try {
+      await apiRequest("/api/patients", {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
+      setMessage({ type: "success", text: "Patient registered successfully." });
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      setMessage({ type: "error", text: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-slate-900 shadow-md rounded-xl border border-slate-200 dark:border-slate-800">
-      <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-        Patient Registration
+    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+      <h2 className="text-xl font-bold text-slate-900 mb-6">
+        Staff Patient Registration
       </h2>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-        Enter details to register a new patient into the system.
-      </p>
 
-      {submitted ? (
-        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6 text-center space-y-4">
-          <div className="text-emerald-600 dark:text-emerald-400 font-semibold text-lg">
-            Patient Registered Successfully (Static Preview)
-          </div>
-          <div className="text-sm text-slate-600 dark:text-slate-300 space-y-1.5 text-left bg-white dark:bg-slate-800 p-4 rounded border border-slate-200 dark:border-slate-700">
-            <p>
-              <strong>Name:</strong> {formData.fullName}
-            </p>
-            <p>
-              <strong>Contact:</strong> {formData.phone} | {formData.email}
-            </p>
-            <p>
-              <strong>DOB & Gender:</strong> {formData.dob} ({formData.gender})
-            </p>
-            <p>
-              <strong>Blood Group:</strong> {formData.bloodGroup}
-            </p>
-            <p>
-              <strong>Emergency Contact:</strong>{" "}
-              {formData.emergencyContactName} ({formData.emergencyContactPhone})
-            </p>
-            <p>
-              <strong>Allergies:</strong>{" "}
-              {formData.knownAllergies || "None reported"}
-            </p>
-          </div>
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 text-sm bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-lg hover:opacity-90 font-medium"
-          >
-            Register Another Patient
-          </button>
+      {message.text && (
+        <div
+          className={`p-4 mb-6 rounded-lg text-sm font-medium ${
+            message.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {message.text}
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Full Name & Email */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                required
-                placeholder="Jane Doe"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-sl3ate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+      )}
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="jane.doe@example.com"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          {/* Phone & Date of Birth */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                placeholder="+1 (555) 123-4567"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          {/* Gender & Blood Group */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Gender
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {GENDER_OPTIONS.map((g) => (
-                  <option key={g} value={g} className="dark:bg-slate-900">
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Blood Group
-              </label>
-              <select
-                name="bloodGroup"
-                value={formData.bloodGroup}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {BLOOD_GROUPS.map((bg) => (
-                  <option key={bg} value={bg} className="dark:bg-slate-900">
-                    {bg}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Address */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Residential Address
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              First Name *
             </label>
             <input
               type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="123 Health Ave, Suite 4B"
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+              value={formData.first_name}
+              onChange={(e) =>
+                setFormData({ ...formData, first_name: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
             />
           </div>
-
-          {/* Emergency Contact */}
-          <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Emergency Contact
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="emergencyContactName"
-                value={formData.emergencyContactName}
-                onChange={handleChange}
-                placeholder="Contact Name"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <input
-                type="tel"
-                name="emergencyContactPhone"
-                value={formData.emergencyContactPhone}
-                onChange={handleChange}
-                placeholder="Contact Phone"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-
-          {/* Allergies / Medical Notes */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Known Allergies or Medical Conditions
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Last Name *
             </label>
-            <textarea
-              name="knownAllergies"
-              rows={2}
-              value={formData.knownAllergies}
-              onChange={handleChange}
-              placeholder="e.g. Penicillin, Asthma, Latex (leave blank if none)"
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            <input
+              type="text"
+              required
+              value={formData.last_name}
+              onChange={(e) =>
+                setFormData({ ...formData, last_name: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
             />
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-          >
-            Register Patient
-          </button>
-        </form>
-      )}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Gender *
+            </label>
+            <select
+              value={formData.gender}
+              onChange={(e) =>
+                setFormData({ ...formData, gender: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Date of Birth *
+            </label>
+            <input
+              type="date"
+              required
+              value={formData.date_of_birth}
+              onChange={(e) =>
+                setFormData({ ...formData, date_of_birth: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Phone *
+            </label>
+            <input
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Blood Group *
+            </label>
+            <select
+              value={formData.blood_group}
+              onChange={(e) =>
+                setFormData({ ...formData, blood_group: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            >
+              {BLOOD_GROUPS.map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Email Address (Optional)
+          </label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Residential Address *
+          </label>
+          <input
+            type="text"
+            required
+            value={formData.residential_address}
+            onChange={(e) =>
+              setFormData({ ...formData, residential_address: e.target.value })
+            }
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Emergency Contact Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.emergency_contact_name}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  emergency_contact_name: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Emergency Contact Phone *
+            </label>
+            <input
+              type="tel"
+              required
+              value={formData.emergency_contact_phone}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  emergency_contact_phone: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full mt-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+        >
+          {loading ? "Registering Patient..." : "Save Patient File"}
+        </button>
+      </form>
     </div>
   );
-}
+};
