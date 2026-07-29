@@ -1,12 +1,16 @@
+import { useNavigate } from "react-router-dom";
 import { BrandLockup } from "../common/BrandLockup";
 
-export const LandingPage = ({ onGetStarted }) => {
+export const LandingPage = () => {
+  const navigate = useNavigate();
+  const handleGetStarted = () => navigate("/auth");
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <header className="px-8 py-6 bg-white border-b flex justify-between items-center">
         <BrandLockup />
         <button
-          onClick={onGetStarted}
+          onClick={handleGetStarted}
           className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
         >
           Access Portal
@@ -23,7 +27,7 @@ export const LandingPage = ({ onGetStarted }) => {
         </p>
         <div>
           <button
-            onClick={onGetStarted}
+            onClick={handleGetStarted}
             className="px-8 py-4 bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-blue-700 transition"
           >
             Get Started Now

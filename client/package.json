@@ -16,6 +16,7 @@
     "lucide-react": "^1.27.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-router-dom": "^6.23.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
