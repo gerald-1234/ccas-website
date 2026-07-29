@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
-import Login from './components/auth/Login';
-import Sidebar from './components/layout/Sidebar';
-import DoctorDashboard from './components/dashboards/DoctorDashboard';
-import ReceptionDashboard from './components/dashboards/ReceptionDashboard';
-import ManagerDashboard from './components/dashboards/ManagerDashboard';
-import PatientRegistration from './components/forms/PatientRegistration';
-import AppointmentBooking from './components/forms/AppointmentBooking';
+import React, { useState } from "react";
+import Sidebar from "./components/layout/Sidebar";
+import DoctorDashboard from "./components/dashboards/DoctorDashboard";
+import ReceptionDashboard from "./components/dashboards/ReceptionDashboard";
+import ManagerDashboard from "./components/dashboards/ManagerDashboard";
+import PatientRegistration from "./components/forms/PatientRegistration";
+import AppointmentBooking from "./components/forms/AppointmentBooking";
+import Authentication from "./components/auth/Authentication";
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); // { name, role }
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   if (!currentUser) {
-    return <Login onLogin={(user) => { setCurrentUser(user); setActiveTab('dashboard'); }} />;
+    return (
+      <Authentication
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          setActiveTab("dashboard");
+        }}
+      />
+    );
   }
 
+  const role = currentUser.role?.toLowerCase() || "doctor";
+
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100 selection:bg-teal-500 selection:text-slate-950">
       {/* Sidebar Navigation */}
       <Sidebar
         user={currentUser}
@@ -25,14 +34,21 @@ export default function App() {
         onLogout={() => setCurrentUser(null)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-7xl mx-auto">
-          {activeTab === 'dashboard' && currentUser.role === 'Doctor' && <DoctorDashboard user={currentUser} />}
-          {activeTab === 'dashboard' && currentUser.role === 'Receptionist' && <ReceptionDashboard />}
-          {activeTab === 'dashboard' && currentUser.role === 'Clinic Manager' && <ManagerDashboard />}
-          {activeTab === 'register' && <PatientRegistration />}
-          {activeTab === 'booking' && <AppointmentBooking />}
+      {/* Main Content Viewport */}
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          {activeTab === "dashboard" && role === "doctor" && (
+            <DoctorDashboard user={currentUser} />
+          )}
+          {activeTab === "dashboard" && role === "receptionist" && (
+            <ReceptionDashboard />
+          )}
+          {activeTab === "dashboard" &&
+            (role === "manager" || role === "clinic manager") && (
+              <ManagerDashboard />
+            )}
+          {activeTab === "register" && <PatientRegistration />}
+          {activeTab === "booking" && <AppointmentBooking />}
         </div>
       </main>
     </div>
