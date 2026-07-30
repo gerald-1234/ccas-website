@@ -6,10 +6,10 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { Notifications } from "../shared/Notifications";
-import { Account } from "../shared/Account";
 import { apiRequest } from "../../config/api";
 import { PatientDirectory } from "../patients/PatientDirectory";
+import { Account } from "../shared/Account.jsx";
+import { Notifications } from "../shared/Notifications.jsx";
 
 export const NurseDashboard = () => {
   const navigate = useNavigate();
