@@ -48,12 +48,12 @@ export const ManagerDashboard = () => {
       </div>
 
       <Routes>
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<ManagerReports />} />
         <Route path="reports" element={<ManagerReports />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
-        <Route path="*" element={<Navigate to="overview" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );

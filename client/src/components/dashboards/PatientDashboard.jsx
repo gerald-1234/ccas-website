@@ -8,7 +8,8 @@ import {
 } from "react-router-dom";
 import { Notifications } from "../shared/Notifications";
 import { Account } from "../shared/Account";
-import { useAuth } from "../../AuthContext";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
 import { apiRequest } from "../../config/api";
 import { AppointmentBooking } from "../forms/AppointmentBooking";
 
@@ -109,7 +110,7 @@ export const PatientDashboard = () => {
       <Routes>
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route
           path="overview"
           element={<AppointmentsList appointments={appointments} />}
@@ -127,7 +128,7 @@ export const PatientDashboard = () => {
           path="history"
           element={<MedicalRecordsList records={records} />}
         />
-        <Route path="*" element={<Navigate to="overview" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );

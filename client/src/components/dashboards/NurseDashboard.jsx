@@ -52,10 +52,10 @@ export const NurseDashboard = () => {
       <Routes>
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<VitalsQueue />} />
         <Route path="patients" element={<PatientDirectory />} />
-        <Route path="*" element={<Navigate to="overview" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );

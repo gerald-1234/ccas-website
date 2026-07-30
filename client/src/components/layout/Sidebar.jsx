@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../../AuthContext";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
 import { NAV_ITEMS, ROLE_PAGES } from "../../config/navigation";
 import { BrandLockup } from "../common/BrandLockup";
 

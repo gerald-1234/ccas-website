@@ -1,62 +1,54 @@
 import {
+  BrowserRouter as Router,
   Navigate,
   Route,
-  BrowserRouter as Router,
   Routes,
+  Link,
 } from "react-router-dom";
 
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 import { Authentication } from "./components/auth/Authentication";
 import { Dashboard } from "./components/dashboards/Dashboard";
-import { LandingPage } from "./components/landing/LandingPage";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { LandingPage } from "./components/landing/LandingPage";
+
+const LoadingScreen = ({ text = "Loading..." }) => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="text-slate-500 text-sm font-medium animate-pulse">
+      {text}
+    </div>
+  </div>
+);
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-500 font-medium text-sm animate-pulse">
-          Authenticating session...
-        </div>
-      </div>
-    );
+    return <LoadingScreen text="Authenticating session..." />;
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return children;
+  return user ? children : <Navigate to="/auth" replace />;
 };
 
-// Public Route Wrapper (Redirects logged-in users away from auth to dashboard)
 const PublicAuthRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-500 font-medium text-sm animate-pulse">
-          Loading...
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
+  return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
-// Redirects logged-in users from the root path to their dashboard.
 const RootRedirect = () => {
   const { user, loading } = useAuth();
-  if (loading) return null; // Or a loading spinner
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 };
 
@@ -65,10 +57,8 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Landing Page (redirects if logged in) */}
           <Route path="/" element={<RootRedirect />} />
 
-          {/* Authentication Route (src/components/auth/Authentication.jsx) */}
           <Route
             path="/auth"
             element={
@@ -78,7 +68,6 @@ export default function App() {
             }
           />
 
-          {/* Protected Dashboard Route */}
           <Route
             path="/dashboard/*"
             element={
@@ -90,23 +79,24 @@ export default function App() {
             }
           />
 
-          {/* Fallback 404 Route */}
           <Route
             path="*"
             element={
-              <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-slate-50">
-                <h1 className="text-5xl font-extrabold text-slate-900 mb-2">
+              <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center">
+                <h1 className="mb-2 text-5xl font-extrabold text-slate-900">
                   404
                 </h1>
-                <p className="text-slate-500 mb-6 text-sm">
+
+                <p className="mb-6 text-sm text-slate-500">
                   The page you are looking for does not exist.
                 </p>
-                <a
-                  href="/"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition"
+
+                <Link
+                  to="/"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
                 >
                   Return Home
-                </a>
+                </Link>
               </div>
             }
           />

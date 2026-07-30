@@ -1,4 +1,5 @@
-import { useAuth } from "../../AuthContext";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
 import { AdminDashboard } from "./AdminDashboard";
 import { DoctorDashboard } from "./DoctorDashboard";
 import { ManagerDashboard } from "./ManagerDashboard";
