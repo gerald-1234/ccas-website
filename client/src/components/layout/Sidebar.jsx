@@ -1,85 +1,72 @@
-import React from "react";
-import { useAuth } from "../../useAuth";
+import { NavLink } from "react-router-dom";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
+import { NAV_ITEMS, ROLE_PAGES } from "../../config/navigation";
 import { BrandLockup } from "../common/BrandLockup";
 
-export const Sidebar = ({ activeTab, setActiveTab }) => {
-  const { user, logout } = useAuth();
+export const Sidebar = ({ isOpen, onClose, onNavChange }) => {
+  const { user } = useAuth();
+  const allowedPages = ROLE_PAGES[user?.role] || [];
 
-  const getNavItems = () => {
-    switch (user?.role) {
-      case "patient":
-        return [
-          { id: "dashboard", label: "Dashboard" },
-          { id: "booking", label: "Book Appointment" },
-          { id: "history", label: "Medical History" },
-        ];
-      case "receptionist":
-        return [
-          { id: "dashboard", label: "Reception Dashboard" },
-          { id: "registration", label: "Register Patient" },
-          { id: "booking", label: "Schedule Appointment" },
-          { id: "patients", label: "Patient Directory" },
-        ];
-      case "doctor":
-        return [
-          { id: "dashboard", label: "Doctor Dashboard" },
-          { id: "patients", label: "Patients" },
-        ];
-      case "nurse":
-        return [
-          { id: "dashboard", label: "Nurse Portal" },
-          { id: "patients", label: "Patient Directory" },
-        ];
-      case "manager":
-        return [{ id: "dashboard", label: "Manager Dashboard" }];
-      case "admin":
-        return [
-          { id: "dashboard", label: "System Overview" },
-          { id: "users", label: "User Administration" },
-          { id: "patients", label: "Patients" },
-        ];
-      default:
-        return [];
+  const groupedPages = allowedPages.reduce((acc, pageKey) => {
+    const item = NAV_ITEMS[pageKey];
+    if (!acc[item.section]) {
+      acc[item.section] = [];
     }
-  };
+    acc[item.section].push({ key: pageKey, ...item });
+    return acc;
+  }, {});
 
   return (
-    <aside className="w-64 bg-slate-900 text-white min-h-screen flex flex-col justify-between p-6">
-      <div className="space-y-8">
-        <BrandLockup light />
-        <nav className="space-y-1">
-          {getNavItems().map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition ${
-                activeTab === item.id
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              {item.label}
-            </button>
+    <>
+      <div
+        className={`fixed inset-0 z-30 bg-black/50 transition-opacity sm:hidden ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      ></div>
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 -translate-x-full border-r bg-white p-4 transition-transform sm:translate-x-0 sm:static sm:z-auto ${
+          isOpen ? "translate-x-0" : ""
+        }`}
+      >
+        <div className="mb-6">
+          <BrandLockup size="sm" />
+        </div>
+        <nav className="flex flex-col gap-4">
+          {Object.entries(groupedPages).map(([section, items]) => (
+            <div key={section}>
+              <p className="mb-2 px-2 text-xs font-semibold uppercase text-slate-400 tracking-wider">
+                {section}
+              </p>
+              <div className="flex flex-col gap-1">
+                {items.map((item) => (
+                  <NavLink
+                    key={item.key}
+                    to={`/dashboard/${item.key}`}
+                    onClick={() => {
+                      onNavChange(item.label);
+                      onClose();
+                    }}
+                    end
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-blue-100 text-blue-700"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`
+                    }
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
-      </div>
-
-      <div className="pt-6 border-t border-slate-800 space-y-4">
-        <div className="px-2">
-          <p className="text-sm font-semibold text-white truncate">
-            {user?.email}
-          </p>
-          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded bg-blue-900 text-blue-200 capitalize font-medium">
-            {user?.role}
-          </span>
-        </div>
-        <button
-          onClick={logout}
-          className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-950/50 rounded-lg transition"
-        >
-          Sign Out
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

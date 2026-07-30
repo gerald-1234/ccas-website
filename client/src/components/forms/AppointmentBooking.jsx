@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
 import { apiRequest } from "../../config/api";
-import { useAuth } from "../../useAuth";
 
 export const AppointmentBooking = ({ onSuccess }) => {
   const { user } = useAuth();

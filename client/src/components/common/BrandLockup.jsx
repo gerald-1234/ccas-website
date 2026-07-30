@@ -1,5 +1,3 @@
-import React from "react";
-
 export const BrandLockup = ({ size = "md", light = false }) => {
   const isLarge = size === "lg";
 

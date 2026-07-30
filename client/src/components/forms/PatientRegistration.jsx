@@ -30,6 +30,18 @@ export const PatientRegistration = ({ onSuccess }) => {
         body: JSON.stringify(formData),
       });
       setMessage({ type: "success", text: "Patient registered successfully." });
+      setFormData({
+        first_name: "",
+        last_name: "",
+        gender: "Male",
+        date_of_birth: "",
+        phone: "",
+        email: "",
+        residential_address: "",
+        blood_group: "O+",
+        emergency_contact_name: "",
+        emergency_contact_phone: "",
+      });
       if (onSuccess) onSuccess();
     } catch (err) {
       setMessage({ type: "error", text: err.message });

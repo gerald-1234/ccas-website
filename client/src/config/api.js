@@ -7,30 +7,29 @@ export const API_BASE_URL = configuredBaseUrl.endsWith("/api")
   : `${configuredBaseUrl}/api`;
 
 export async function apiRequest(path, options = {}) {
-  const token = sessionStorage.getItem('careconnect_token');
+  const token = sessionStorage.getItem("careconnect_token");
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
-
-  const config = {
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers,
-  };
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
 
-  const response = await fetch(`${API_BASE_URL}${path}`, config);
-
-  if (response.status === 401) {
-    sessionStorage.removeItem('careconnect_token');
-    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+  if (response.status === 401 && token) {
+    // Token is invalid or expired, notify the app to log out
+    window.dispatchEvent(new CustomEvent("auth:unauthorized"));
   }
 
-  const data = await response.json();
+  // Try to parse JSON, but handle cases with no content (e.g., 204 No Content)
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed.');
+    // Use the error message from the API, or a default
+    throw new Error(data?.error || `Request failed with status ${response.status}`);
   }
 
   return data;

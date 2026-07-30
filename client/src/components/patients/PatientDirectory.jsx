@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../../config/api";
 
-export const PatientDirectory = () => {
+export const PatientDirectory = ({ linkToHistory = false }) => {
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const fetchPatients = async (query = "") => {
     setLoading(true);
@@ -29,6 +31,12 @@ export const PatientDirectory = () => {
     fetchPatients(search);
   };
 
+  const handleRowClick = (patientId) => {
+    if (linkToHistory) {
+      navigate(`/dashboard/history/${patientId}`);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -50,6 +58,12 @@ export const PatientDirectory = () => {
         </form>
       </div>
 
+      {linkToHistory && (
+        <p className="text-xs text-slate-500 -mt-4">
+          Click a patient to view their medical history.
+        </p>
+      )}
+
       {loading ? (
         <p className="text-slate-500 text-sm py-4">
           Loading patient records...
@@ -68,7 +82,11 @@ export const PatientDirectory = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {patients.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
+                <tr
+                  key={p.id}
+                  onClick={() => handleRowClick(p.id)}
+                  className={`hover:bg-slate-50 ${linkToHistory ? "cursor-pointer" : ""}`}
+                >
                   <td className="p-3 font-semibold text-slate-900">
                     {p.first_name} {p.last_name}
                   </td>
