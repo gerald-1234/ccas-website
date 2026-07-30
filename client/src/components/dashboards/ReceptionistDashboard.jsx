@@ -10,7 +10,7 @@ import { apiRequest } from "../../config/api";
 import { AppointmentBooking } from "../forms/AppointmentBooking";
 import { PatientRegistration } from "../forms/PatientRegistration";
 import { WalkInRegistration } from "../forms/WalkInRegistration";
-import { Account } from "../shared/Accounts.jsx";
+import { Account } from "../shared/Account.jsx";
 import { Notifications } from "../shared/Notifications";
 
 export const ReceptionistDashboard = () => {
