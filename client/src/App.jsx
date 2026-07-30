@@ -5,16 +5,13 @@ import {
   Routes,
 } from "react-router-dom";
 
-// Auth Provider (located directly in src/)
 import { AuthProvider, useAuth } from "./AuthContext";
 
-// Components
 import { Authentication } from "./components/auth/Authentication";
 import { Dashboard } from "./components/dashboards/Dashboard";
 import { LandingPage } from "./components/landing/LandingPage";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 
-// Protected Route Wrapper (Restricted to logged-in users)
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
