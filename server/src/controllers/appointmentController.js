@@ -162,7 +162,7 @@ async function validateBooking(doctor, date, time, duration) {
 
   if (error) throw error;
   if (!fitsDoctorSchedule(time, duration, schedule || [])) {
-    return 'The selected time is outside the doctor’s available slots.';
+    return 'The selected time is outside the doctor\'s available slots.';
   }
 
   return null;

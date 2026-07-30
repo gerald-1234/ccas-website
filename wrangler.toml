@@ -1,11 +1,11 @@
 name = "ccas-website"
-compatibility_date = "2026-07-27"
+compatibility_date = "2026-07-29"
+
+[build]
+command = "npm run build"
+cwd = "client"
+watch_dir = ["client/src", "client/public", "client/index.html", "client/vite.config.js"]
 
 [assets]
-directory = "./client(First)"
-# Match the clean, extensionless HTML URLs used throughout the portal.
-
-html_handling = "auto-trailing-slash"
-# Serve client/404.html for routes that do not match a static asset.
-
-not_found_handling = "404-page"
+directory = "./client/dist"
+not_found_handling = "single-page-application"
