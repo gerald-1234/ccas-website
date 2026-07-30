@@ -30,22 +30,18 @@ export const ROLE_PAGES = {
   ],
   doctor: [
     "overview",
-    "appointments",
     "patients",
-    "doctors",
     "history",
     "notifications",
     "account",
   ],
   nurse: [
     "overview",
-    "appointments",
     "patients",
-    "doctors",
     "notifications",
     "account",
   ],
-  manager: ["overview", "reports", "doctors", "notifications", "account"],
+  manager: ["overview", "reports", "notifications", "account"],
   admin: [
     "overview",
     "appointments",

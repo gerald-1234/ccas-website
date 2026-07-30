@@ -132,7 +132,7 @@ export const Authentication = () => {
               {error && (
                 <div className="p-3.5 text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200/80 rounded-lg flex items-start gap-2.5">
                   <svg
-                    className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 text-red-500 shrink-0 mt-0.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

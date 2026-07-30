@@ -1,18 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "./config/api";
-
-export const AuthContext = createContext(null);
+import { AuthContext } from "../AuthContextObject";
 
 export function AuthProvider({ children }) {
-  // A custom hook to easily access the auth context
-
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +14,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   const fetchUser = useCallback(async () => {
+    // DEV-ONLY: bypass real auth to preview dashboard UI while backend is down.
+    // const mockRole = import.meta.env.VITE_MOCK_ROLE;
+    // if (mockRole) {
+    //   setUser({
+    //     id: "mock-user-id",
+    //     first_name: "Preview",
+    //     last_name: mockRole.charAt(0).toUpperCase() + mockRole.slice(1),
+    //     email: `preview.${mockRole}@careconnect.test`,
+    //     role: mockRole,
+    //   });
+    //   setProfile({ id: "mock-profile-id", phone: "+2348000000000" });
+    //   setLoading(false);
+    //   return;
+    // }
+    ///////////////////////////////////////////////////////////////////////
+
     const token = sessionStorage.getItem("careconnect_token");
 
     if (!token) {
@@ -32,28 +38,20 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // AbortController to cancel fetch on unmount
-    const controller = new AbortController();
-    const signal = controller.signal;
-
     try {
-      const data = await apiRequest("/auth/me", { signal });
-
+      const data = await apiRequest("/auth/me");
       setUser(data.user ?? null);
       setProfile(data.profile ?? null);
     } catch (error) {
-      if (error.name !== "AbortError") {
-        console.error("Failed to restore session:", error);
-        clearAuth();
-      }
+      console.error("Failed to restore session:", error);
+      clearAuth();
     } finally {
       setLoading(false);
     }
-
-    return () => controller.abort();
   }, [clearAuth]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount to restore session from stored token
     fetchUser();
 
     const handleUnauthorized = () => {
@@ -78,7 +76,7 @@ export function AuthProvider({ children }) {
       });
 
       sessionStorage.setItem("careconnect_token", data.token);
-      await fetchUser(); // Fetch full user/profile details immediately
+      await fetchUser();
 
       return data;
     },
@@ -111,7 +109,3 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export const useAuth = () => {
-  return useContext(AuthContext);
-};

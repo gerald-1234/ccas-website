@@ -55,7 +55,7 @@ export const DoctorDashboard = () => {
       <Routes>
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<ConsultationDesk />} />
         <Route path="patients" element={<PatientDirectory linkToHistory />} />
         <Route path="history" element={<PatientDirectory linkToHistory />} />
@@ -63,7 +63,7 @@ export const DoctorDashboard = () => {
           path="history/:patientId"
           element={<PatientHistoryView />}
         />{" "}
-        <Route path="*" element={<Navigate to="overview" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );

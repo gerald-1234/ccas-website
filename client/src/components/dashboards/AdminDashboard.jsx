@@ -54,12 +54,12 @@ export const AdminDashboard = () => {
       <Routes>
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<Navigate to="/dashboard/overview" replace />} />
         <Route path="overview" element={<AdminOverview />} />
         <Route path="patients" element={<PatientDirectory />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="admin" element={<UserManagement />} />
-        <Route path="*" element={<Navigate to="overview" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../AuthContext";
+// import { useAuth } from "../../AuthContext";
+import { useAuth } from "../../useAuth.js";
 import { apiRequest } from "../../config/api";
 
 export const Account = () => {
