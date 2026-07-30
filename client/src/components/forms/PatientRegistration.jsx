@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { apiRequest } from "../../config/api";
 import { BLOOD_GROUPS } from "../../config/constants";
 
@@ -25,7 +25,7 @@ export const PatientRegistration = ({ onSuccess }) => {
     setMessage({ type: "", text: "" });
 
     try {
-      await apiRequest("/api/patients", {
+      await apiRequest("/patients", {
         method: "POST",
         body: JSON.stringify(formData),
       });

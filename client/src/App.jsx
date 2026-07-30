@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { AdminOverview } from "./components/admin/AdminOverview";
+import { UserAdministration } from "./components/admin/UserAdministration";
 import { AuthProvider } from "./AuthContext";
 import { Authentication } from "./components/auth/Authentication";
 import { LandingPage } from "./components/landing/LandingPage";
@@ -47,6 +49,12 @@ const MainLayout = () => {
         );
       case "patients":
         return <PatientDirectory />;
+      case "users":
+        return user.role === "admin" ? (
+          <UserAdministration />
+        ) : (
+          <div className="rounded-lg bg-white p-6 text-slate-900">Access denied.</div>
+        );
       case "dashboard":
       default:
         switch (user.role) {
@@ -58,9 +66,11 @@ const MainLayout = () => {
             return <ManagerDashboard />;
           case "patient":
             return <AppointmentBooking />;
+          case "admin":
+            return <AdminOverview />;
           default:
             return (
-              <div className="p-6 bg-white rounded-xl">
+              <div className="p-6 bg-white rounded-xl text-slate-900">
                 Welcome to CareConnect Workspace.
               </div>
             );
