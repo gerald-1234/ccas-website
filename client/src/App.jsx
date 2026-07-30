@@ -1,95 +1,107 @@
-import { useState } from "react";
-import { AdminOverview } from "./components/admin/AdminOverview";
-import { UserAdministration } from "./components/admin/UserAdministration";
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Route,
+  Routes,
+  Link,
+} from "react-router-dom";
+
 import { AuthProvider } from "./AuthContext";
-import { Authentication } from "./components/auth/Authentication";
-import { LandingPage } from "./components/landing/LandingPage";
-import { Sidebar } from "./components/layout/Sidebar";
 import { useAuth } from "./useAuth";
 
-// Dashboards
-import { DoctorDashboard } from "./components/dashboards/DoctorDashboard";
-import { ManagerDashboard } from "./components/dashboards/ManagerDashboard";
-import { ReceptionDashboard } from "./components/dashboards/ReceptionDashboard";
+import { Authentication } from "./components/auth/Authentication";
+import { Dashboard } from "./components/dashboards/Dashboard";
+import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { LandingPage } from "./components/landing/LandingPage";
 
-// Forms & Pages
-import { AppointmentBooking } from "./components/forms/AppointmentBooking";
-import { PatientRegistration } from "./components/forms/PatientRegistration";
-import { PatientDirectory } from "./components/patients/PatientDirectory";
+const LoadingScreen = ({ text = "Loading..." }) => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="text-slate-500 text-sm font-medium animate-pulse">
+      {text}
+    </div>
+  </div>
+);
 
-const MainLayout = () => {
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  const [showAuth, setShowAuth] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">
-        Loading CareConnect Workspace...
-      </div>
-    );
+    return <LoadingScreen text="Authenticating session..." />;
   }
 
-  if (!user) {
-    if (showAuth) {
-      return <Authentication onCancelLanding={() => setShowAuth(false)} />;
-    }
-    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+  return user ? children : <Navigate to="/auth" replace />;
+};
+
+const PublicAuthRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "registration":
-        return (
-          <PatientRegistration onSuccess={() => setActiveTab("dashboard")} />
-        );
-      case "booking":
-        return (
-          <AppointmentBooking onSuccess={() => setActiveTab("dashboard")} />
-        );
-      case "patients":
-        return <PatientDirectory />;
-      case "users":
-        return user.role === "admin" ? (
-          <UserAdministration />
-        ) : (
-          <div className="rounded-lg bg-white p-6 text-slate-900">Access denied.</div>
-        );
-      case "dashboard":
-      default:
-        switch (user.role) {
-          case "receptionist":
-            return <ReceptionDashboard />;
-          case "doctor":
-            return <DoctorDashboard />;
-          case "manager":
-            return <ManagerDashboard />;
-          case "patient":
-            return <AppointmentBooking />;
-          case "admin":
-            return <AdminOverview />;
-          default:
-            return (
-              <div className="p-6 bg-white rounded-xl text-slate-900">
-                Welcome to CareConnect Workspace.
-              </div>
-            );
-        }
-    }
-  };
+  return user ? <Navigate to="/dashboard" replace /> : children;
+};
 
-  return (
-    <div className="flex min-h-screen bg-slate-100 font-sans">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 p-10 overflow-y-auto">{renderContent()}</main>
-    </div>
-  );
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 };
 
 export default function App() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <Router>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+
+          <Route
+            path="/auth"
+            element={
+              <PublicAuthRoute>
+                <Authentication />
+              </PublicAuthRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/*"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center">
+                <h1 className="mb-2 text-5xl font-extrabold text-slate-900">
+                  404
+                </h1>
+
+                <p className="mb-6 text-sm text-slate-500">
+                  The page you are looking for does not exist.
+                </p>
+
+                <Link
+                  to="/"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Return Home
+                </Link>
+              </div>
+            }
+          />
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }

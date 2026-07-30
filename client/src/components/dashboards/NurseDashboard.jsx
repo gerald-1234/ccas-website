@@ -8,24 +8,21 @@ import {
 } from "react-router-dom";
 import { apiRequest } from "../../config/api";
 import { PatientDirectory } from "../patients/PatientDirectory";
-import { PatientHistoryView } from "../patients/PatientHistoryView";
-import { Account } from "../shared/Account";
-import { Notifications } from "../shared/Notifications";
+import { Account } from "../shared/Account.jsx";
+import { Notifications } from "../shared/Notifications.jsx";
 
-export const DoctorDashboard = () => {
+export const NurseDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const activeTab = location.pathname.split("/").pop();
+  const activeTab = location.pathname.split("/")[2] || "overview";
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-4 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Doctor Consultation Desk
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900">Nursing Station</h1>
           <p className="text-sm text-slate-500">
-            Manage patient queue and record clinical evaluations.
+            Record vital signs and manage today's appointment queue.
           </p>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-lg">
@@ -37,7 +34,7 @@ export const DoctorDashboard = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Schedule
+            Vitals Queue
           </button>
           <button
             onClick={() => navigate("/dashboard/patients")}
@@ -56,29 +53,29 @@ export const DoctorDashboard = () => {
         <Route path="notifications" element={<Notifications />} />
         <Route path="account" element={<Account />} />
         <Route index element={<Navigate to="/dashboard/overview" replace />} />
-        <Route path="overview" element={<ConsultationDesk />} />
-        <Route path="patients" element={<PatientDirectory linkToHistory />} />
-        <Route path="history" element={<PatientDirectory linkToHistory />} />
-        <Route
-          path="history/:patientId"
-          element={<PatientHistoryView />}
-        />{" "}
+        <Route path="overview" element={<VitalsQueue />} />
+        <Route path="patients" element={<PatientDirectory />} />
         <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
       </Routes>
     </div>
   );
 };
 
-const ConsultationDesk = () => {
+const VitalsQueue = () => {
   const [appointments, setAppointments] = useState([]);
   const [activeApt, setActiveApt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [record, setRecord] = useState({
-    diagnosis: "",
-    treatment: "",
-    prescription: "",
-    doctor_notes: "",
+  const [vitals, setVitals] = useState({
+    temperature_c: "",
+    systolic_bp: "",
+    diastolic_bp: "",
+    pulse_rate: "",
+    respiratory_rate: "",
+    oxygen_saturation: "",
+    weight_kg: "",
+    height_cm: "",
+    observations: "",
   });
 
   const loadSchedule = async () => {
@@ -99,45 +96,67 @@ const ConsultationDesk = () => {
 
   const handleSelectAppointment = (apt) => {
     setActiveApt(apt);
-    setRecord({
-      diagnosis: apt.diagnosis || "",
-      treatment: apt.treatment || "",
-      prescription: apt.prescription || "",
-      doctor_notes: apt.doctor_notes || "",
+    setVitals({
+      temperature_c: "",
+      systolic_bp: "",
+      diastolic_bp: "",
+      pulse_rate: "",
+      respiratory_rate: "",
+      oxygen_saturation: "",
+      weight_kg: "",
+      height_cm: "",
+      observations: "",
     });
   };
 
-  const handleSaveRecord = async (e) => {
+  const handleChange = (field, value) => {
+    setVitals({ ...vitals, [field]: value });
+  };
+
+  const handleSaveVitals = async (e) => {
     e.preventDefault();
     if (!activeApt) return;
 
     try {
       setSaving(true);
 
-      await apiRequest(`/medical/appointments/${activeApt.id}/record`, {
-        method: "PUT",
-        body: JSON.stringify(record),
-      });
+      const payload = Object.fromEntries(
+        Object.entries(vitals).map(([k, v]) => [
+          k,
+          k === "observations" ? v : v === "" ? null : Number(v),
+        ]),
+      );
 
-      await apiRequest(`/appointments/${activeApt.id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "completed" }),
+      await apiRequest(`/medical/appointments/${activeApt.id}/vitals`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
       });
 
       setActiveApt(null);
       await loadSchedule();
     } catch (err) {
-      alert(`Error saving clinical record: ${err.message}`);
+      alert(`Error saving vitals: ${err.message}`);
     } finally {
       setSaving(false);
     }
   };
 
+  const fields = [
+    { key: "temperature_c", label: "Temperature (°C)" },
+    { key: "systolic_bp", label: "Systolic BP" },
+    { key: "diastolic_bp", label: "Diastolic BP" },
+    { key: "pulse_rate", label: "Pulse Rate" },
+    { key: "respiratory_rate", label: "Respiratory Rate" },
+    { key: "oxygen_saturation", label: "Oxygen Saturation (%)" },
+    { key: "weight_kg", label: "Weight (kg)" },
+    { key: "height_cm", label: "Height (cm)" },
+  ];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center justify-between">
-          <span>Assigned Consultations</span>
+          <span>Today's Queue</span>
           <span className="text-xs bg-blue-100 text-blue-800 font-semibold px-2.5 py-0.5 rounded-full">
             {appointments.length}
           </span>
@@ -147,7 +166,7 @@ const ConsultationDesk = () => {
           <p className="text-sm text-slate-500 py-4">Loading schedule...</p>
         ) : appointments.length === 0 ? (
           <p className="text-sm text-slate-500 py-4">
-            No active appointments assigned.
+            No appointments scheduled.
           </p>
         ) : (
           <div className="space-y-3">
@@ -167,22 +186,10 @@ const ConsultationDesk = () => {
                       {apt.patient_name || apt.patient?.full_name || "Patient"}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                      <span className="font-medium text-slate-700">
-                        {apt.appointment_time}
-                      </span>
+                      {apt.appointment_time}
                       {apt.reason_for_visit && ` — ${apt.reason_for_visit}`}
                     </p>
-                    <span
-                      className={`inline-block mt-2 text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
-                        apt.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {apt.status || "scheduled"}
-                    </span>
                   </div>
-
                   <button
                     onClick={() => handleSelectAppointment(apt)}
                     className={`px-3 py-1.5 rounded text-xs font-semibold transition ${
@@ -191,7 +198,7 @@ const ConsultationDesk = () => {
                         : "bg-blue-600 text-white hover:bg-blue-700"
                     }`}
                   >
-                    {isActive ? "Editing..." : "Consult"}
+                    {isActive ? "Editing..." : "Record Vitals"}
                   </button>
                 </div>
               );
@@ -204,17 +211,12 @@ const ConsultationDesk = () => {
         {activeApt ? (
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Clinical Note & Prescription
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Patient:{" "}
-                  <strong className="text-slate-700">
-                    {activeApt.patient_name || "Patient"}
-                  </strong>
-                </p>
-              </div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Vital Signs —{" "}
+                <span className="font-normal text-slate-600">
+                  {activeApt.patient_name || "Patient"}
+                </span>
+              </h2>
               <button
                 onClick={() => setActiveApt(null)}
                 className="text-xs text-slate-400 hover:text-slate-600"
@@ -223,61 +225,32 @@ const ConsultationDesk = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecord} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Diagnosis *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={record.diagnosis}
-                  onChange={(e) =>
-                    setRecord({ ...record, diagnosis: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                />
+            <form onSubmit={handleSaveVitals} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {fields.map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {f.label}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={vitals[f.key]}
+                      onChange={(e) => handleChange(f.key, e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                ))}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Treatment Plan *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={record.treatment}
-                  onChange={(e) =>
-                    setRecord({ ...record, treatment: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Prescription
-                </label>
-                <input
-                  type="text"
-                  value={record.prescription}
-                  onChange={(e) =>
-                    setRecord({ ...record, prescription: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Doctor Notes (Confidential)
+                  Observations
                 </label>
                 <textarea
                   rows={2}
-                  value={record.doctor_notes}
-                  onChange={(e) =>
-                    setRecord({ ...record, doctor_notes: e.target.value })
-                  }
+                  value={vitals.observations}
+                  onChange={(e) => handleChange("observations", e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -288,9 +261,7 @@ const ConsultationDesk = () => {
                   disabled={saving}
                   className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition disabled:opacity-50"
                 >
-                  {saving
-                    ? "Saving Record..."
-                    : "Save Clinical File & Complete"}
+                  {saving ? "Saving..." : "Save Vitals"}
                 </button>
                 <button
                   type="button"
@@ -304,11 +275,9 @@ const ConsultationDesk = () => {
           </div>
         ) : (
           <div className="bg-slate-50 p-8 rounded-xl border border-dashed border-slate-300 text-center text-slate-500">
-            <p className="font-medium text-sm">
-              No Active Consultation Selected
-            </p>
+            <p className="font-medium text-sm">No Patient Selected</p>
             <p className="text-xs mt-1">
-              Select an appointment from the left column to write notes.
+              Select an appointment from the queue to record vitals.
             </p>
           </div>
         )}
