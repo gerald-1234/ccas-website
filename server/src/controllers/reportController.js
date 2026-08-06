@@ -1,6 +1,8 @@
 const supabase = require('../config/supabase');
 const { isValidDate } = require('../utils/helpers');
 
+const MAX_REPORT_DAYS = 92;
+
 function getDateRange(query) {
   const today = new Date().toISOString().slice(0, 10);
   const from = query.from || today;
@@ -9,6 +11,12 @@ function getDateRange(query) {
   if (!isValidDate(from) || !isValidDate(to) || from > to) {
     return null;
   }
+
+  const spanDays = (new Date(`${to}T00:00:00Z`) - new Date(`${from}T00:00:00Z`)) / (1000 * 60 * 60 * 24);
+  if (spanDays > MAX_REPORT_DAYS) {
+    return null;
+  }
+
   return { from, to };
 }
 
@@ -30,7 +38,7 @@ async function getAppointmentsInRange(from, to) {
 
 async function summary(req, res) {
   const range = getDateRange(req.query);
-  if (!range) return res.status(400).json({ error: 'Use valid from and to dates.' });
+  if (!range) return res.status(400).json({ error: 'Use valid from and to dates within a 92-day range.' });
 
   try {
     const appointments = await getAppointmentsInRange(range.from, range.to);
@@ -43,7 +51,9 @@ async function summary(req, res) {
     };
 
     for (const appointment of appointments) {
-      byStatus[appointment.status] += 1;
+      if (byStatus[appointment.status] !== undefined) {
+        byStatus[appointment.status] += 1;
+      }
     }
 
     const attended = byStatus.checked_in + byStatus.completed;
@@ -65,7 +75,7 @@ async function summary(req, res) {
 
 async function doctorUtilization(req, res) {
   const range = getDateRange(req.query);
-  if (!range) return res.status(400).json({ error: 'Use valid from and to dates.' });
+  if (!range) return res.status(400).json({ error: 'Use valid from and to dates within a 92-day range.' });
 
   try {
     const [appointments, doctorResult] = await Promise.all([

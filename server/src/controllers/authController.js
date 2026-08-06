@@ -15,7 +15,7 @@ function createToken(user) {
   return jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h', algorithm: 'HS256' }
   );
 }
 
