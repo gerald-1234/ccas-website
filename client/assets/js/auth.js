@@ -33,7 +33,7 @@ function selectTab(tabName) {
   });
 
   panels.forEach((panel) => {
-    panel.hidden = panel.dataset.authPanel !== tabName;
+    panel.style.display = panel.dataset.authPanel !== tabName ? 'none' : 'block';
   });
 
   const isLogin = tabName === 'login';

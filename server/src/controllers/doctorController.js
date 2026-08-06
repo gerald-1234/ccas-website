@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const addAuditLog = require('../utils/audit');
 const { buildAvailableSlots } = require('../utils/appointment');
-const { getDayOfWeek, isValidDate, missingFields } = require('../utils/helpers');
+const { getDayOfWeek, isValidDate, isValidTime, missingFields, timeToMinutes } = require('../utils/helpers');
 
 async function listDoctors(req, res) {
   const { data, error } = await supabase
@@ -69,8 +69,15 @@ async function setAvailability(req, res) {
     if (missing.length) {
       return res.status(400).json({ error: 'Each period needs day_of_week, start_time, and end_time.' });
     }
-    if (Number(period.day_of_week) < 1 || Number(period.day_of_week) > 7) {
-      return res.status(400).json({ error: 'day_of_week must be between 1 and 7.' });
+    const dayOfWeek = Number(period.day_of_week);
+    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
+      return res.status(400).json({ error: 'day_of_week must be an integer between 1 and 7.' });
+    }
+    if (!isValidTime(period.start_time) || !isValidTime(period.end_time)) {
+      return res.status(400).json({ error: 'start_time and end_time must use HH:MM.' });
+    }
+    if (timeToMinutes(period.end_time) <= timeToMinutes(period.start_time)) {
+      return res.status(400).json({ error: 'end_time must be after start_time.' });
     }
   }
 
@@ -85,7 +92,12 @@ async function setAvailability(req, res) {
     return res.status(403).json({ error: 'You can only edit your own availability.' });
   }
 
-  await supabase.from('doctor_availability').delete().eq('doctor_id', doctor.id);
+  const { data: existingRows, error: existingError } = await supabase
+    .from('doctor_availability')
+    .select('id')
+    .eq('doctor_id', doctor.id);
+
+  if (existingError) return res.status(500).json({ error: 'Could not load existing availability.' });
 
   const rows = periods.map((period) => ({
     doctor_id: doctor.id,
@@ -101,6 +113,17 @@ async function setAvailability(req, res) {
     .select();
 
   if (error) return res.status(500).json({ error: 'Could not save doctor availability.' });
+
+  const existingIds = (existingRows || []).map((row) => row.id);
+  if (existingIds.length) {
+    const { error: deleteError } = await supabase
+      .from('doctor_availability')
+      .delete()
+      .in('id', existingIds);
+    if (deleteError) {
+      console.error('Availability cleanup failed:', deleteError.message);
+    }
+  }
 
   await addAuditLog(req.user.id, 'DOCTOR_AVAILABILITY_UPDATED', `Doctor ID: ${doctor.id}`);
   return res.json({ message: 'Availability saved.', periods: data });

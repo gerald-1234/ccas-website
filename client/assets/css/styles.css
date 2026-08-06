@@ -170,6 +170,7 @@ strong {
 }
 
 .button {
+  margin-top: 12px;
   min-height: 42px;
   display: inline-flex;
   align-items: center;

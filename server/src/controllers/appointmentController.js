@@ -79,64 +79,69 @@ async function appointmentHasConflict({
 }
 
 async function queueNotifications(appointment, patient, doctor, type) {
-  if (!patient.user_id) return;
+  if (!patient || !patient.user_id) return;
 
-  await supabase
-    .from('notifications')
-    .delete()
-    .eq('appointment_id', appointment.id)
-    .eq('is_read', false);
+  try {
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('appointment_id', appointment.id)
+      .eq('is_read', false);
 
-  const appointmentText =
-    `${appointment.appointment_date} at ${String(appointment.appointment_time).slice(0, 5)} ` +
-    `with Dr. ${doctor.first_name} ${doctor.last_name}`;
+    const appointmentText =
+      `${appointment.appointment_date} at ${String(appointment.appointment_time).slice(0, 5)} ` +
+      `with Dr. ${doctor.first_name} ${doctor.last_name}`;
 
-  const messages = {
-    confirmation: {
-      title: 'Appointment confirmed',
-      message: `Your appointment is booked for ${appointmentText}.`,
-    },
-    rescheduled: {
-      title: 'Appointment rescheduled',
-      message: `Your appointment has been moved to ${appointmentText}.`,
-    },
-    cancelled: {
-      title: 'Appointment cancelled',
-      message: `Your appointment for ${appointmentText} has been cancelled.`,
-    },
-  };
+    const messages = {
+      confirmation: {
+        title: 'Appointment confirmed',
+        message: `Your appointment is booked for ${appointmentText}.`,
+      },
+      rescheduled: {
+        title: 'Appointment rescheduled',
+        message: `Your appointment has been moved to ${appointmentText}.`,
+      },
+      cancelled: {
+        title: 'Appointment cancelled',
+        message: `Your appointment for ${appointmentText} has been cancelled.`,
+      },
+    };
 
-  const rows = [{
-    user_id: patient.user_id,
-    appointment_id: appointment.id,
-    notification_type: type,
-    title: messages[type].title,
-    message: messages[type].message,
-    show_at: new Date().toISOString(),
-  }];
+    const rows = [{
+      user_id: patient.user_id,
+      appointment_id: appointment.id,
+      notification_type: type,
+      title: messages[type].title,
+      message: messages[type].message,
+      show_at: new Date().toISOString(),
+    }];
 
-  if (type !== 'cancelled') {
-    const hours = Number(process.env.APPOINTMENT_REMINDER_HOURS) || 24;
-    const reminderTime = new Date(
-      appointmentDateTime(
-        appointment.appointment_date,
-        appointment.appointment_time
-      ).getTime() - hours * 60 * 60 * 1000
-    );
+    if (type !== 'cancelled') {
+      const hours = Number(process.env.APPOINTMENT_REMINDER_HOURS) || 24;
+      const reminderTime = new Date(
+        appointmentDateTime(
+          appointment.appointment_date,
+          appointment.appointment_time
+        ).getTime() - hours * 60 * 60 * 1000
+      );
 
-    if (reminderTime > new Date()) {
-      rows.push({
-        user_id: patient.user_id,
-        appointment_id: appointment.id,
-        notification_type: 'reminder',
-        title: 'Appointment reminder',
-        message: `Reminder: your appointment is ${appointmentText}.`,
-        show_at: reminderTime.toISOString(),
-      });
+      if (reminderTime > new Date()) {
+        rows.push({
+          user_id: patient.user_id,
+          appointment_id: appointment.id,
+          notification_type: 'reminder',
+          title: 'Appointment reminder',
+          message: `Reminder: your appointment is ${appointmentText}.`,
+          show_at: reminderTime.toISOString(),
+        });
+      }
     }
-  }
 
-  await supabase.from('notifications').insert(rows);
+    await supabase.from('notifications').insert(rows);
+  } catch (error) {
+    // Notifications are best-effort and must not fail the appointment operation.
+    console.error('Notification queueing failed:', error.message);
+  }
 }
 
 async function validateBooking(doctor, date, time, duration) {

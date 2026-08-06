@@ -58,7 +58,9 @@ server/
     utils/                   Small shared helper functions
   test/                      Unit tests
 DEVELOPERS.md                Frontend integration guide
-render.yaml                  Render deployment blueprint
+render.yaml                  Render deployment blueprint (backend)
+wrangler.toml                Cloudflare Pages configuration (frontend)
+LICENSE                      MIT license
 ```
 
 ## Local Setup
@@ -173,14 +175,25 @@ Run `database/schema.sql` in Supabase before the first deployment. You can creat
 the first administrator locally because the local script and the deployed API use
 the same Supabase database.
 
-## Frontend Deployment
+## Frontend Deployment on Cloudflare Pages
 
-Deploy the `client/` folder to a static host. The production API address is
-stored in:
+The repository includes `wrangler.toml`, which deploys the `client/` folder to
+Cloudflare Pages.
 
-```text
-client/assets/js/config.js
-```
+1. From the repository root, run:
+
+   ```bash
+   npx wrangler pages deploy client
+   ```
+
+   Alternatively, connect the repository in the Cloudflare dashboard and set the
+   output directory to `client`.
+
+2. The production API address is stored in:
+
+   ```text
+   client/assets/js/config.js
+   ```
 
 Set the backend `CLIENT_URL` to the exact deployed frontend origin. If the
 Render backend address changes, update both `config.js` and the `connect-src`

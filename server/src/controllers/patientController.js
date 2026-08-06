@@ -148,6 +148,20 @@ async function updatePatient(req, res) {
     }
   }
 
+  if (updates.email && patient.user_id) {
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ email: updates.email })
+      .eq('id', patient.user_id);
+
+    if (userError) {
+      if (userError.code === '23505') {
+        return res.status(409).json({ error: 'An account already uses this email.' });
+      }
+      return res.status(500).json({ error: 'Could not update the login email.' });
+    }
+  }
+
   const { data: updated, error } = await supabase
     .from('patients')
     .update(updates)

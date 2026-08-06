@@ -30,6 +30,10 @@ function isValidDate(date) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(date || ''));
 }
 
+function isValidTime(time) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(time || ''));
+}
+
 function timeToMinutes(time) {
   const [hours, minutes] = String(time).split(':').map(Number);
   return hours * 60 + minutes;
@@ -52,6 +56,7 @@ module.exports = {
   getDayOfWeek,
   isValidDate,
   isValidEmail,
+  isValidTime,
   missingFields,
   normalizeEmail,
   pageDetails,

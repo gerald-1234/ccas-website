@@ -4,11 +4,174 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="CareConnect Clinic Appointment System">
-  <title>CareConnect | Clinic System</title>
-  <link rel="icon" href="/assets/images/careconnect-mark.svg" type="image/svg+xml">
+  <title>Sign in | CareConnect</title>
+  <link rel="icon" href="assets/images/careconnect-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-teal-500 selection:text-slate-950">
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+<body class="auth-body">
+  <main class="auth-layout">
+    <section class="auth-brand-panel" aria-labelledby="brand-heading">
+      <div class="brand-lockup brand-lockup-light">
+        <img src="assets/images/careconnect-logo.svg" alt="" width="48" height="48">
+        <div>
+          <strong>CareConnect</strong>
+          <span>Clinic Appointment System</span>
+        </div>
+      </div>
+
+      <div class="auth-brand-copy">
+        <p class="eyebrow">Connected clinic care</p>
+        <h1 id="brand-heading">Appointments, records, and clinic teams in one place.</h1>
+        <p>Secure access for patients, doctors, nurses, receptionists, managers, and administrators.</p>
+      </div>
+
+      <img
+        class="auth-visual"
+        src="assets/images/care-pattern.svg"
+        alt="Calendar, patient, medical record, and clinic connected around a care symbol"
+      >
+
+      <p class="auth-brand-footer">CareConnect Clinic &copy; <span data-current-year></span></p>
+    </section>
+
+    <section class="auth-form-panel">
+      <div class="auth-mobile-brand brand-lockup">
+        <img src="assets/images/careconnect-logo.svg" alt="" width="42" height="42">
+        <div>
+          <strong>CareConnect</strong>
+          <span>Clinic Appointment System</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-heading">
+          <p class="eyebrow">Welcome</p>
+          <h2 id="auth-title">Sign in to your account</h2>
+          <p id="auth-subtitle">Enter the details provided by your clinic.</p>
+        </div>
+
+        <div class="segmented-control" role="tablist" aria-label="Account access">
+          <button class="segment is-active" type="button" role="tab" aria-selected="true" data-auth-tab="login">
+            Sign in
+          </button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-auth-tab="register">
+            Patient registration
+          </button>
+        </div>
+
+        <div id="auth-message" class="form-message" role="alert" hidden></div>
+
+        <form id="login-form" class="auth-form" data-auth-panel="login">
+          <label class="field">
+            <span>Email address</span>
+            <input type="email" name="email" autocomplete="email" placeholder="name@example.com" required>
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <span class="password-field">
+              <input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required>
+              <button class="password-toggle" type="button" title="Show password" aria-label="Show password" data-password-toggle>
+                Show
+              </button>
+            </span>
+          </label>
+
+          <button class="button button-primary button-block" type="submit">
+            <span>Sign in</span>
+            <span class="button-spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <form id="register-form" class="auth-form" data-auth-panel="register" style="display: none">
+          <div class="form-grid form-grid-two">
+            <label class="field">
+              <span>First name</span>
+              <input type="text" name="first_name" autocomplete="given-name" required>
+            </label>
+            <label class="field">
+              <span>Last name</span>
+              <input type="text" name="last_name" autocomplete="family-name" required>
+            </label>
+            <label class="field">
+              <span>Gender</span>
+              <select name="gender" required>
+                <option value="">Select gender</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Date of birth</span>
+              <input type="date" name="date_of_birth" autocomplete="bday" required>
+            </label>
+            <label class="field">
+              <span>Phone number</span>
+              <input type="tel" name="phone" autocomplete="tel" placeholder="+234..." required>
+            </label>
+            <label class="field">
+              <span>Blood group</span>
+              <select name="blood_group" required>
+                <option value="">Select group</option>
+                <option>A+</option>
+                <option>A-</option>
+                <option>B+</option>
+                <option>B-</option>
+                <option>AB+</option>
+                <option>AB-</option>
+                <option>O+</option>
+                <option>O-</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Email address</span>
+            <input type="email" name="email" autocomplete="email" required>
+          </label>
+
+          <label class="field">
+            <span>Residential address</span>
+            <textarea name="residential_address" rows="2" autocomplete="street-address" required></textarea>
+          </label>
+
+          <div class="form-grid form-grid-two">
+            <label class="field">
+              <span>Emergency contact name</span>
+              <input type="text" name="emergency_contact_name" required>
+            </label>
+            <label class="field">
+              <span>Emergency contact phone</span>
+              <input type="tel" name="emergency_contact_phone" required>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Password</span>
+            <span class="password-field">
+              <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+              <button class="password-toggle" type="button" title="Show password" aria-label="Show password" data-password-toggle>
+                Show
+              </button>
+            </span>
+            <small>At least 8 characters, including uppercase, lowercase, and a number.</small>
+          </label>
+
+          <button class="button button-primary button-block" type="submit">
+            <span>Create patient account</span>
+            <span class="button-spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div class="api-status" aria-live="polite">
+          <span class="status-dot" data-api-status-dot></span>
+          <span data-api-status-text>Checking clinic server...</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/auth.js"></script>
 </body>
 </html>
