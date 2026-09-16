@@ -79,6 +79,12 @@ async function setAvailability(req, res) {
     if (timeToMinutes(period.end_time) <= timeToMinutes(period.start_time)) {
       return res.status(400).json({ error: 'end_time must be after start_time.' });
     }
+    const duration = period.slot_duration_minutes === undefined
+      ? 30
+      : Number(period.slot_duration_minutes);
+    if (!Number.isInteger(duration) || duration < 10 || duration > 240) {
+      return res.status(400).json({ error: 'slot_duration_minutes must be an integer between 10 and 240.' });
+    }
   }
 
   const { data: doctor } = await supabase
@@ -107,23 +113,23 @@ async function setAvailability(req, res) {
     slot_duration_minutes: Number(period.slot_duration_minutes) || 30,
   }));
 
-  const { data, error } = await supabase
-    .from('doctor_availability')
-    .insert(rows)
-    .select();
-
-  if (error) return res.status(500).json({ error: 'Could not save doctor availability.' });
-
+  // Replace rather than duplicate: remove the old set first. Inserting first
+  // then deleting could leave two copies when the delete fails.
   const existingIds = (existingRows || []).map((row) => row.id);
   if (existingIds.length) {
     const { error: deleteError } = await supabase
       .from('doctor_availability')
       .delete()
       .in('id', existingIds);
-    if (deleteError) {
-      console.error('Availability cleanup failed:', deleteError.message);
-    }
+    if (deleteError) return res.status(500).json({ error: 'Could not save doctor availability.' });
   }
+
+  const { data, error } = await supabase
+    .from('doctor_availability')
+    .insert(rows)
+    .select();
+
+  if (error) return res.status(500).json({ error: 'Could not save doctor availability.' });
 
   await addAuditLog(req.user.id, 'DOCTOR_AVAILABILITY_UPDATED', `Doctor ID: ${doctor.id}`);
   return res.json({ message: 'Availability saved.', periods: data });

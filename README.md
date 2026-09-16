@@ -147,6 +147,16 @@ http://localhost:5500
 
 The backend `CLIENT_URL` must contain `http://localhost:5500`.
 
+## Default Admin Credentials
+
+`npm run create-admin` creates the administrator account below so the system can be accessed right after setup:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Administrator | `admin@careconnect.local` | `Encrypted.01` |
+
+Change the `ADMIN_*` values in `server/.env` before any real deployment.
+
 ## Tests
 
 Run:

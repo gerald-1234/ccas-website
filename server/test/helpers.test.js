@@ -21,6 +21,12 @@ test('date validation requires YYYY-MM-DD', () => {
   assert.equal(isValidDate('27/07/2026'), false);
 });
 
+test('date validation rejects impossible calendar dates', () => {
+  assert.equal(isValidDate('2026-02-31'), false);
+  assert.equal(isValidDate('2026-13-01'), false);
+  assert.equal(isValidDate('2024-02-29'), true);
+});
+
 test('passwords need at least one letter and one number', () => {
   assert.equal(validatePassword('password'), 'Password must contain at least one letter and one number.');
   assert.equal(validatePassword('password1'), null);

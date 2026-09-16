@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 
 # Session Pooler connection string from:
 # Supabase Dashboard -> Connect -> Session Pooler
+# The real password is NOT committed; paste it here before running.
 $SupabaseDbUrl = 'postgresql://postgres.YOUR-PROJECT-REF:YOUR-DB-PASSWORD@aws-1-eu-west-2.pooler.supabase.com:5432/postgres'
 # Where backups will be stored
 $BackupRoot = './CCAS_backups'
