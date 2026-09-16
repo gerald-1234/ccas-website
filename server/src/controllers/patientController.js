@@ -148,17 +148,25 @@ async function updatePatient(req, res) {
     }
   }
 
-  if (updates.email && patient.user_id) {
+  // Keep the login profile (users) in sync so the header name and contact
+  // details update immediately after a patient edits their own profile.
+  const userUpdates = {};
+  if (updates.email) userUpdates.email = updates.email;
+  if (updates.first_name) userUpdates.first_name = updates.first_name;
+  if (updates.last_name) userUpdates.last_name = updates.last_name;
+  if (updates.phone) userUpdates.phone = updates.phone;
+
+  if (patient.user_id && Object.keys(userUpdates).length > 0) {
     const { error: userError } = await supabase
       .from('users')
-      .update({ email: updates.email })
+      .update(userUpdates)
       .eq('id', patient.user_id);
 
     if (userError) {
       if (userError.code === '23505') {
         return res.status(409).json({ error: 'An account already uses this email.' });
       }
-      return res.status(500).json({ error: 'Could not update the login email.' });
+      return res.status(500).json({ error: 'Could not update the login profile.' });
     }
   }
 
