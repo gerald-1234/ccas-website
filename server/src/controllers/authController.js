@@ -11,9 +11,13 @@ const {
   validatePassword,
 } = require('../utils/helpers');
 
+// Compared against when the email is unknown so response time does not reveal
+// whether an account exists (hashed with the same cost as real passwords).
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('careconnect-invalid-credential', 10);
+
 function createToken(user) {
   return jwt.sign(
-    { id: user.id, role: user.role },
+    { id: user.id, role: user.role, token_version: Number(user.token_version || 0) },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '8h', algorithm: 'HS256' }
   );
@@ -141,25 +145,32 @@ async function login(req, res) {
       .maybeSingle();
 
     if (error) throw error;
-    if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
-    if (!user.is_active) return res.status(403).json({ error: 'This account is inactive.' });
 
-    const lockTime = user.locked_until ? new Date(user.locked_until).getTime() : 0;
-    if (lockTime > Date.now()) {
-      return res.status(423).json({ error: 'Account locked. Try again after 15 minutes.' });
-    }
+    const lockTime = user && user.locked_until ? new Date(user.locked_until).getTime() : 0;
+    const isLocked = lockTime > Date.now();
 
-    const passwordMatches = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatches) {
-      const failedAttempts = Number(user.failed_login_attempts) + 1;
-      const update = { failed_login_attempts: failedAttempts, locked_until: null };
+    // Always run a bcrypt comparison, even for unknown/inactive/locked accounts,
+    // so an attacker cannot distinguish them by response time.
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user ? user.password_hash : DUMMY_PASSWORD_HASH
+    );
+    const canSignIn = Boolean(user) && user.is_active && !isLocked && passwordMatches;
 
-      if (failedAttempts >= 5) {
-        update.failed_login_attempts = 0;
-        update.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    if (!canSignIn) {
+      if (user && user.is_active && !isLocked && !passwordMatches) {
+        const failedAttempts = Number(user.failed_login_attempts) + 1;
+        const update = { failed_login_attempts: failedAttempts, locked_until: null };
+
+        if (failedAttempts >= 5) {
+          update.failed_login_attempts = 0;
+          update.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+        }
+
+        await supabase.from('users').update(update).eq('id', user.id);
       }
 
-      await supabase.from('users').update(update).eq('id', user.id);
+      // Same message for every failure so responses never reveal account state.
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
@@ -190,6 +201,10 @@ async function me(req, res) {
       .select('*')
       .eq('user_id', req.user.id)
       .maybeSingle();
+    if (result.error) {
+      console.error('Patient profile lookup failed:', result.error.message);
+      return res.status(500).json({ error: 'Could not load your profile.' });
+    }
     profile = result.data;
   }
 
@@ -199,6 +214,10 @@ async function me(req, res) {
       .select('*')
       .eq('user_id', req.user.id)
       .maybeSingle();
+    if (result.error) {
+      console.error('Doctor profile lookup failed:', result.error.message);
+      return res.status(500).json({ error: 'Could not load your profile.' });
+    }
     profile = result.data;
   }
 
@@ -218,7 +237,7 @@ async function changePassword(req, res) {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('password_hash')
+      .select('password_hash,token_version')
       .eq('id', req.user.id)
       .single();
     if (error) throw error;
@@ -229,7 +248,14 @@ async function changePassword(req, res) {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await supabase.from('users').update({ password_hash: passwordHash }).eq('id', req.user.id);
+    await supabase
+      .from('users')
+      .update({
+        password_hash: passwordHash,
+        // Invalidate every previously issued token for this account.
+        token_version: Number(user.token_version || 0) + 1,
+      })
+      .eq('id', req.user.id);
     await addAuditLog(req.user.id, 'PASSWORD_CHANGED');
 
     return res.json({ message: 'Password changed successfully.' });

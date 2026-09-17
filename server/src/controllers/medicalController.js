@@ -49,6 +49,10 @@ async function getClinicalRecord(req, res) {
   }
 }
 
+function optionalValue(value) {
+  return value === undefined || value === null || value === '' ? null : value;
+}
+
 async function saveVitalSigns(req, res) {
   try {
     const appointment = await getAppointment(req, req.params.appointmentId);
@@ -57,15 +61,15 @@ async function saveVitalSigns(req, res) {
     const values = {
       appointment_id: appointment.id,
       recorded_by: req.user.id,
-      temperature_c: req.body.temperature_c || null,
-      systolic_bp: req.body.systolic_bp || null,
-      diastolic_bp: req.body.diastolic_bp || null,
-      pulse_rate: req.body.pulse_rate || null,
-      respiratory_rate: req.body.respiratory_rate || null,
-      oxygen_saturation: req.body.oxygen_saturation || null,
-      weight_kg: req.body.weight_kg || null,
-      height_cm: req.body.height_cm || null,
-      observations: req.body.observations || null,
+      temperature_c: optionalValue(req.body.temperature_c),
+      systolic_bp: optionalValue(req.body.systolic_bp),
+      diastolic_bp: optionalValue(req.body.diastolic_bp),
+      pulse_rate: optionalValue(req.body.pulse_rate),
+      respiratory_rate: optionalValue(req.body.respiratory_rate),
+      oxygen_saturation: optionalValue(req.body.oxygen_saturation),
+      weight_kg: optionalValue(req.body.weight_kg),
+      height_cm: optionalValue(req.body.height_cm),
+      observations: optionalValue(req.body.observations),
     };
 
     const { data, error } = await supabase
@@ -112,7 +116,10 @@ async function saveMedicalRecord(req, res) {
       .single();
 
     if (error) throw error;
-    await supabase.from('appointments').update({ status: 'completed' }).eq('id', appointment.id);
+    // Only a checked-in visit is completed by saving its medical record.
+    if (appointment.status === 'checked_in') {
+      await supabase.from('appointments').update({ status: 'completed' }).eq('id', appointment.id);
+    }
     await addAuditLog(req.user.id, 'MEDICAL_RECORD_SAVED', `Appointment ID: ${appointment.id}`);
 
     return res.json({ message: 'Medical record saved.', medical_record: data });

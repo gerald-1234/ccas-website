@@ -3,10 +3,23 @@ const addAuditLog = require('../utils/audit');
 const { buildAvailableSlots } = require('../utils/appointment');
 const { getDayOfWeek, isValidDate, isValidTime, missingFields, timeToMinutes } = require('../utils/helpers');
 
+const DOCTOR_PUBLIC_COLUMNS =
+  'id,user_id,first_name,last_name,specialization,consultation_room,availability_status,doctor_availability(*)';
+const DOCTOR_PRIVATE_COLUMNS =
+  'id,user_id,first_name,last_name,specialization,phone,email,consultation_room,availability_status,doctor_availability(*)';
+
+// Doctors' contact details are only returned to clinic staff; patients and
+// other doctors get the public columns.
+function doctorColumns(role) {
+  return ['receptionist', 'nurse', 'manager', 'admin'].includes(role)
+    ? DOCTOR_PRIVATE_COLUMNS
+    : DOCTOR_PUBLIC_COLUMNS;
+}
+
 async function listDoctors(req, res) {
   const { data, error } = await supabase
     .from('doctors')
-    .select('*, doctor_availability(*)')
+    .select(doctorColumns(req.user.role))
     .order('last_name');
 
   if (error) return res.status(500).json({ error: 'Could not load doctors.' });
@@ -16,7 +29,7 @@ async function listDoctors(req, res) {
 async function getDoctor(req, res) {
   const { data, error } = await supabase
     .from('doctors')
-    .select('*, doctor_availability(*)')
+    .select(doctorColumns(req.user.role))
     .eq('id', req.params.id)
     .maybeSingle();
 
@@ -29,6 +42,19 @@ async function getAvailableSlots(req, res) {
   const date = String(req.query.date || '');
   if (!isValidDate(date)) {
     return res.status(400).json({ error: 'date must use YYYY-MM-DD.' });
+  }
+
+  const { data: doctor, error: doctorError } = await supabase
+    .from('doctors')
+    .select('id')
+    .eq('id', req.params.id)
+    .maybeSingle();
+
+  if (doctorError) {
+    return res.status(500).json({ error: 'Could not calculate available slots.' });
+  }
+  if (!doctor) {
+    return res.status(404).json({ error: 'Doctor not found.' });
   }
 
   const dayOfWeek = getDayOfWeek(date);
@@ -98,36 +124,19 @@ async function setAvailability(req, res) {
     return res.status(403).json({ error: 'You can only edit your own availability.' });
   }
 
-  const { data: existingRows, error: existingError } = await supabase
-    .from('doctor_availability')
-    .select('id')
-    .eq('doctor_id', doctor.id);
-
-  if (existingError) return res.status(500).json({ error: 'Could not load existing availability.' });
-
-  const rows = periods.map((period) => ({
-    doctor_id: doctor.id,
+  const periodsPayload = periods.map((period) => ({
     day_of_week: Number(period.day_of_week),
     start_time: period.start_time,
     end_time: period.end_time,
     slot_duration_minutes: Number(period.slot_duration_minutes) || 30,
   }));
 
-  // Replace rather than duplicate: remove the old set first. Inserting first
-  // then deleting could leave two copies when the delete fails.
-  const existingIds = (existingRows || []).map((row) => row.id);
-  if (existingIds.length) {
-    const { error: deleteError } = await supabase
-      .from('doctor_availability')
-      .delete()
-      .in('id', existingIds);
-    if (deleteError) return res.status(500).json({ error: 'Could not save doctor availability.' });
-  }
-
-  const { data, error } = await supabase
-    .from('doctor_availability')
-    .insert(rows)
-    .select();
+  // The delete and insert run inside one database function/transaction, so a
+  // failed save can never wipe the doctor's existing availability.
+  const { data, error } = await supabase.rpc('set_doctor_availability', {
+    p_doctor_id: doctor.id,
+    p_periods: periodsPayload,
+  });
 
   if (error) return res.status(500).json({ error: 'Could not save doctor availability.' });
 
