@@ -9,6 +9,31 @@ const {
   pageDetails,
 } = require('../utils/helpers');
 
+const TEXT_LIMITS = {
+  first_name: 80,
+  last_name: 80,
+  gender: 30,
+  phone: 30,
+  residential_address: 500,
+  emergency_contact_name: 160,
+  emergency_contact_phone: 30,
+};
+
+// Partial updates must still respect the column rules, otherwise a caller can
+// blank out a NOT NULL field or store an oversized value.
+function validateTextUpdates(body, fields) {
+  for (const field of fields) {
+    if (body[field] === undefined) continue;
+    const value = String(body[field] ?? '').trim();
+    if (!value) return `${field} cannot be empty.`;
+    const limit = TEXT_LIMITS[field];
+    if (limit && value.length > limit) {
+      return `${field} must be at most ${limit} characters.`;
+    }
+  }
+  return null;
+}
+
 function valuesFromBody(body) {
   return {
     first_name: String(body.first_name).trim(),
@@ -129,14 +154,26 @@ async function updatePatient(req, res) {
     'emergency_contact_name',
     'emergency_contact_phone',
   ];
+  const textFields = fields.filter((field) => field !== 'email' && field !== 'date_of_birth');
+  const textError = validateTextUpdates(req.body, textFields);
+  if (textError) return res.status(400).json({ error: textError });
+
   const updates = {};
   for (const field of fields) {
-    if (req.body[field] !== undefined) updates[field] = req.body[field];
+    if (req.body[field] === undefined || field === 'email') continue;
+    updates[field] = String(req.body[field]).trim();
   }
 
-  if (updates.email) {
-    updates.email = normalizeEmail(updates.email);
-    if (!isValidEmail(updates.email)) return res.status(400).json({ error: 'Email is invalid.' });
+  if (req.body.email !== undefined) {
+    const rawEmail = String(req.body.email || '').trim();
+    if (!rawEmail) {
+      updates.email = null;
+    } else {
+      updates.email = normalizeEmail(rawEmail);
+      if (!isValidEmail(updates.email)) {
+        return res.status(400).json({ error: 'Email is invalid.' });
+      }
+    }
   }
   if (updates.date_of_birth && !isValidDate(updates.date_of_birth)) {
     return res.status(400).json({ error: 'date_of_birth must use YYYY-MM-DD.' });

@@ -113,6 +113,29 @@ async function updateUserStatus(req, res) {
     return res.status(400).json({ error: 'You cannot deactivate your own account.' });
   }
 
+  const { data: target, error: loadError } = await supabase
+    .from('users')
+    .select('id,role,is_active')
+    .eq('id', req.params.id)
+    .maybeSingle();
+
+  if (loadError) return res.status(500).json({ error: 'Could not update the user.' });
+  if (!target) return res.status(404).json({ error: 'User not found.' });
+
+  if (req.body.is_active === false && target.role === 'admin' && target.is_active) {
+    const { count, error: countError } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'admin')
+      .eq('is_active', true)
+      .neq('id', target.id);
+
+    if (countError) return res.status(500).json({ error: 'Could not update the user.' });
+    if (!count) {
+      return res.status(400).json({ error: 'At least one active admin must remain.' });
+    }
+  }
+
   const { data, error } = await supabase
     .from('users')
     .update({ is_active: req.body.is_active })
@@ -132,6 +155,15 @@ async function resetPassword(req, res) {
   const passwordError = validatePassword(newPassword);
   if (passwordError) return res.status(400).json({ error: passwordError });
 
+  const { data: current, error: loadError } = await supabase
+    .from('users')
+    .select('token_version')
+    .eq('id', req.params.id)
+    .maybeSingle();
+
+  if (loadError) return res.status(500).json({ error: 'Could not reset the password.' });
+  if (!current) return res.status(404).json({ error: 'User not found.' });
+
   const passwordHash = await bcrypt.hash(newPassword, 10);
   const { data, error } = await supabase
     .from('users')
@@ -139,6 +171,8 @@ async function resetPassword(req, res) {
       password_hash: passwordHash,
       failed_login_attempts: 0,
       locked_until: null,
+      // Invalidate every previously issued token for this account.
+      token_version: Number(current.token_version || 0) + 1,
     })
     .eq('id', req.params.id)
     .select('id,email')

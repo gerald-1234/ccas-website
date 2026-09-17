@@ -2,15 +2,18 @@ require('dotenv').config();
 
 const bcrypt = require('bcryptjs');
 const supabase = require('../config/supabase');
-const { normalizeEmail, validatePassword } = require('../utils/helpers');
+const { isValidEmail, normalizeEmail, validatePassword } = require('../utils/helpers');
 
 async function createAdmin() {
   const email = normalizeEmail(process.env.ADMIN_EMAIL);
   const password = process.env.ADMIN_PASSWORD || '';
   const passwordError = validatePassword(password);
 
-  if (!email || passwordError) {
-    throw new Error(passwordError || 'ADMIN_EMAIL is required.');
+  if (!email || !isValidEmail(email)) {
+    throw new Error('ADMIN_EMAIL must be a valid email address.');
+  }
+  if (passwordError) {
+    throw new Error(passwordError);
   }
 
   const { data: existing } = await supabase

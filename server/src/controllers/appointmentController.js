@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const addAuditLog = require('../utils/audit');
 const { fitsDoctorSchedule, timesOverlap } = require('../utils/appointment');
-const { getDayOfWeek, isValidDate, missingFields, pageDetails } = require('../utils/helpers');
+const { getDayOfWeek, isValidDate, isValidTime, missingFields, pageDetails } = require('../utils/helpers');
 
 const APPOINTMENT_SELECT = `
   *,
@@ -12,6 +12,12 @@ const APPOINTMENT_SELECT = `
     id,user_id,first_name,last_name,specialization,consultation_room
   )
 `;
+
+const STATUS_TRANSITIONS = {
+  checked_in: ['scheduled'],
+  completed: ['checked_in'],
+  no_show: ['scheduled', 'checked_in'],
+};
 
 function appointmentDateTime(date, time) {
   const offset = process.env.CLINIC_UTC_OFFSET || '+01:00';
@@ -146,7 +152,7 @@ async function queueNotifications(appointment, patient, doctor, type) {
 
 async function validateBooking(doctor, date, time, duration) {
   if (!isValidDate(date)) return 'appointment_date must use YYYY-MM-DD.';
-  if (!/^\d{2}:\d{2}(:\d{2})?$/.test(String(time))) {
+  if (!isValidTime(String(time))) {
     return 'appointment_time must use HH:MM.';
   }
   if (!Number.isInteger(Number(duration)) || Number(duration) < 10) {
@@ -237,6 +243,11 @@ async function createAppointment(req, res) {
       appointment: { ...appointment, patient, doctor },
     });
   } catch (error) {
+    // 23P01 = exclusion_violation, 23505 = unique_violation. The database
+    // constraints close the race between the conflict check and this insert.
+    if (error && (error.code === '23P01' || error.code === '23505')) {
+      return res.status(409).json({ error: 'The doctor or patient already has an appointment at that time.' });
+    }
     console.error('Create appointment error:', error.message);
     return res.status(500).json({ error: 'Could not book the appointment.' });
   }
@@ -361,6 +372,9 @@ async function rescheduleAppointment(req, res) {
 
     return res.json({ message: 'Appointment rescheduled.', appointment: updated });
   } catch (error) {
+    if (error && (error.code === '23P01' || error.code === '23505')) {
+      return res.status(409).json({ error: 'The new time is already booked.' });
+    }
     return res.status(500).json({ error: 'Could not reschedule the appointment.' });
   }
 }
@@ -429,6 +443,12 @@ async function updateStatus(req, res) {
   }
 
   if (!allowed) return res.status(403).json({ error: 'You cannot set this status.' });
+
+  if (!STATUS_TRANSITIONS[status].includes(appointment.status)) {
+    return res.status(409).json({
+      error: `Cannot change a ${appointment.status} appointment to ${status}.`,
+    });
+  }
 
   const { data: updated, error } = await supabase
     .from('appointments')
