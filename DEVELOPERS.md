@@ -48,7 +48,7 @@ API prefix:
 Production:
 
 ```text
-https://YOUR-RENDER-SERVICE.onrender.com
+https://careconnect-clinic-appointment-system-qp97.onrender.com
 ```
 
 Keep the base URL in one frontend configuration value. Do not repeat it across
