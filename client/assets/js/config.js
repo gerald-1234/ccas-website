@@ -4,7 +4,7 @@ const isLocalDevelopment = LOCAL_HOSTS.includes(window.location.hostname);
 
 export const API_BASE_URL = isLocalDevelopment
   ? 'http://localhost:5000/api'
-  : 'https://careconnect-clinic-appointment-system.onrender.com/api';
+  : 'https://careconnect-clinic-appointment-system-qp97.onrender.com/api';
 
 export const TOKEN_KEY = 'careconnect_token';
 export const USER_KEY = 'careconnect_user';
