@@ -5,6 +5,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/gerald-mathew/ccas-website/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/gerald-mathew/ccas-website/actions/workflows/ci.yml/badge.svg"></a>
+</p>
+
+<p align="center">
   <strong>A role-based clinic appointment system with patient self-service and a staff portal.</strong>
 </p>
 
